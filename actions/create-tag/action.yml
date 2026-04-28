@@ -1,0 +1,60 @@
+name: Create tag from package version
+description: Create a git tag based on the current package.json version and push it to the origin remote.
+inputs:
+  package-json-path:
+    description: Path to the package.json file.
+    required: true
+    default: package.json
+  tag-prefix:
+    description: Prefix to prepend to the version when creating the tag.
+    required: false
+    default: v
+  git-user-name:
+    description: Git user.name for the tag commit.
+    required: true
+  git-user-email:
+    description: Git user.email for the tag commit.
+    required: true
+  tag-message:
+    description: Annotation message for the created tag.
+    required: false
+    default: "Release version from package.json"
+outputs:
+  tag:
+    description: The created tag name.
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: 'lts/*'
+
+    - name: Create and push tag
+      shell: bash
+      run: |
+        package_path="${{ inputs.package-json-path }}"
+        version=$(node - <<'NODE'
+const fs = require('fs');
+const path = process.argv[1];
+const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+if (!pkg.version) {
+  throw new Error('package.json missing version');
+}
+process.stdout.write(pkg.version);
+NODE
+        "$package_path")
+
+        tag="${{ inputs.tag-prefix }}${version}"
+        git config user.name "${{ inputs.git-user-name }}"
+        git config user.email "${{ inputs.git-user-email }}"
+        if git rev-parse "$tag" >/dev/null 2>&1; then
+          echo "Tag $tag already exists"
+        else
+          git tag -a "$tag" -m "${{ inputs.tag-message }}"
+          git push origin "$tag"
+        fi
+        echo "tag=$tag" >> "$GITHUB_OUTPUT"

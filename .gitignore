@@ -1,0 +1,19 @@
+# Node modules and package manager state
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnpm-debug.log*
+
+# Environment and secrets
+.env
+.npmrc
+
+# Editor and OS files
+.DS_Store
+.idea/
+.vscode/
+
+# Build and logs
+coverage/
+*.log

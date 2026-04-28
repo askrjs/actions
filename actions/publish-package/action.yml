@@ -1,0 +1,55 @@
+name: Publish package to npm
+description: Publish an npm package and optionally use OIDC provenance when available.
+inputs:
+  package-json-path:
+    description: Path to the package.json file for the package to publish.
+    required: true
+    default: package.json
+  registry:
+    description: npm registry URL.
+    required: false
+    default: https://registry.npmjs.org/
+  access:
+    description: Package access level for publish.
+    required: false
+    default: public
+  tag:
+    description: npm dist-tag to publish under.
+    required: false
+    default: latest
+  npm-token:
+    description: Optional npm token fallback for authentication.
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: 'lts/*'
+        registry-url: ${{ inputs.registry }}
+
+    - name: Publish package
+      shell: bash
+      run: |
+        project_dir=$(dirname "${{ inputs.package-json-path }}")
+        cd "$project_dir"
+
+        registry="${{ inputs.registry }}"
+        registry_host="${registry#https://}"
+        registry_host="${registry_host#http://}"
+        registry_host="${registry_host%/}"
+
+        npm config set registry "$registry"
+
+        if [ -n "${{ inputs.npm-token }}" ]; then
+          npm config set "//${registry_host}/:_authToken" "${{ inputs.npm-token }}"
+          npm config set "//${registry_host}/:always-auth" true
+        else
+          echo "No npm-token provided. Using OIDC auth if available."
+        fi
+
+        npm publish . --tag "${{ inputs.tag }}" --access "${{ inputs.access }}" --provenance

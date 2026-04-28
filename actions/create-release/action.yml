@@ -1,0 +1,33 @@
+name: Create release from tag
+description: Create a GitHub release from an existing semver git tag.
+inputs:
+  tag:
+    description: The semver tag to release, for example `v1.2.3` or `1.2.3`.
+    required: true
+  body:
+    description: The release body text.
+    required: false
+    default: ''
+  github-token:
+    description: GitHub token used to create the release.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Create GitHub release
+      uses: actions/create-release@v1
+      with:
+        tag_name: ${{ inputs.tag }}
+        release_name: ${{ inputs.tag }}
+        body: ${{ inputs.body }}
+        draft: false
+        prerelease: false
+        github_token: ${{ inputs.github-token }}
+      id: release
+outputs:
+  html_url:
+    description: URL of the created release.
+    value: ${{ steps.release.outputs.html_url }}
+  upload_url:
+    description: Upload URL for release assets.
+    value: ${{ steps.release.outputs.upload_url }}

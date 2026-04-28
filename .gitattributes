@@ -1,0 +1,7 @@
+# Enforce consistent text handling and LF line endings
+* text=auto
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+*.txt text eol=lf
