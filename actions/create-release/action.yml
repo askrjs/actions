@@ -15,19 +15,16 @@ runs:
   using: composite
   steps:
     - name: Create GitHub release
-      uses: actions/create-release@v1
-      with:
-        tag_name: ${{ inputs.tag }}
-        release_name: ${{ inputs.tag }}
-        body: ${{ inputs.body }}
-        draft: false
-        prerelease: false
-        github_token: ${{ inputs.github-token }}
-      id: release
-outputs:
-  html_url:
-    description: URL of the created release.
-    value: ${{ steps.release.outputs.html_url }}
-  upload_url:
-    description: Upload URL for release assets.
-    value: ${{ steps.release.outputs.upload_url }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        if ! [[ "${{ inputs.tag }}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "release tag must be a semver major.minor.patch value, optionally prefixed with v"
+          exit 1
+        fi
+
+        gh release create "${{ inputs.tag }}" \
+          --repo "$GITHUB_REPOSITORY" \
+          --title "${{ inputs.tag }}" \
+          --notes "${{ inputs.body }}"

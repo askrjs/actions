@@ -37,22 +37,18 @@ runs:
       shell: bash
       run: |
         package_path="${{ inputs.package-json-path }}"
-        version=$(node - <<'NODE'
-const fs = require('fs');
-const path = process.argv[1];
-const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
-if (!pkg.version) {
-  throw new Error('package.json missing version');
-}
-process.stdout.write(pkg.version);
-NODE
-        "$package_path")
+        version=$(node -e "const fs = require('fs'); const path = process.argv[1]; const pkg = JSON.parse(fs.readFileSync(path, 'utf8')); if (!pkg.version) { throw new Error('package.json missing version'); } process.stdout.write(pkg.version);" "$package_path")
+
+        if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "package.json version must be a semver major.minor.patch value"
+          exit 1
+        fi
 
         tag="${{ inputs.tag-prefix }}${version}"
         git config user.name "${{ inputs.git-user-name }}"
         git config user.email "${{ inputs.git-user-email }}"
-        if git rev-parse "$tag" >/dev/null 2>&1; then
-          echo "Tag $tag already exists"
+        if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+          echo "Tag $tag already exists on origin"
         else
           git tag -a "$tag" -m "${{ inputs.tag-message }}"
           git push origin "$tag"
