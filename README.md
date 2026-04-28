@@ -7,6 +7,7 @@ Reusable GitHub Actions for npm package repositories.
 - `actions/create-tag` — create a git tag from the current `package.json` version and push it to `origin`
 - `actions/create-release` — create a GitHub release from an existing semver tag
 - `actions/publish-package` — publish an npm package with provenance support using OIDC or an npm token
+- `actions/validate-semver` — validate a semver major.minor.patch value with optional `v` prefix support
 
 ## Usage
 
@@ -32,6 +33,14 @@ with:
   github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+### Validate a semver value
+
+```yaml
+uses: ./actions/validate-semver
+with:
+  semver: v1.2.3
+```
+
 ### Publish a package to npm
 
 ```yaml
@@ -51,6 +60,7 @@ For OIDC-based publish, omit `npm-token` and ensure the workflow has `permission
 - `actions/create-tag` requires `contents: write` to push tags
 - `actions/create-release` requires `contents: write` to create releases
 - `actions/publish-package` requires `id-token: write` for OIDC publishing
+- `actions/validate-semver` has no special permissions requirements
 
 ## Notes
 

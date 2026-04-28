@@ -33,18 +33,26 @@ runs:
       with:
         node-version: 'lts/*'
 
-    - name: Create and push tag
+    - name: Read package version
+      id: package_version
       shell: bash
       run: |
         package_path="${{ inputs.package-json-path }}"
+
         version=$(node -e "const fs = require('fs'); const path = process.argv[1]; const pkg = JSON.parse(fs.readFileSync(path, 'utf8')); if (!pkg.version) { throw new Error('package.json missing version'); } process.stdout.write(pkg.version);" "$package_path")
+        echo "version=$version" >> "$GITHUB_OUTPUT"
 
-        if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "package.json version must be a semver major.minor.patch value"
-          exit 1
-        fi
+    - name: Validate package version
+      id: validate_version
+      uses: ./actions/validate-semver
+      with:
+        semver: ${{ steps.package_version.outputs.version }}
+        allow-v-prefix: false
 
-        tag="${{ inputs.tag-prefix }}${version}"
+    - name: Create and push tag
+      shell: bash
+      run: |
+        tag="${{ inputs.tag-prefix }}${{ steps.validate_version.outputs.normalized }}"
         git config user.name "${{ inputs.git-user-name }}"
         git config user.email "${{ inputs.git-user-email }}"
         if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then

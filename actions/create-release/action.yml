@@ -14,6 +14,12 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Validate release tag
+      id: validate_tag
+      uses: ./actions/validate-semver
+      with:
+        semver: ${{ inputs.tag }}
+
     - name: Create GitHub release
       shell: bash
       env:
@@ -24,12 +30,7 @@ runs:
           exit 1
         fi
 
-        if ! [[ "${{ inputs.tag }}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "release tag must be a semver major.minor.patch value, optionally prefixed with v"
-          exit 1
-        fi
-
-        gh release create "${{ inputs.tag }}" \
+        gh release create "${{ steps.validate_tag.outputs.value }}" \
           --repo "$GITHUB_REPOSITORY" \
-          --title "${{ inputs.tag }}" \
+          --title "${{ steps.validate_tag.outputs.value }}" \
           --notes "${{ inputs.body }}"

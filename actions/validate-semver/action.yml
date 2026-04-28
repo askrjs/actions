@@ -1,0 +1,44 @@
+name: Validate semver
+description: Validate a semver major.minor.patch value with an optional v prefix.
+inputs:
+  semver:
+    description: The semver value to validate.
+    required: true
+  allow-v-prefix:
+    description: Allow a leading v prefix.
+    required: false
+    default: 'true'
+outputs:
+  value:
+    description: The original validated value.
+    value: ${{ steps.validate.outputs.value }}
+  normalized:
+    description: The validated value without a leading v prefix.
+    value: ${{ steps.validate.outputs.normalized }}
+runs:
+  using: composite
+  steps:
+    - id: validate
+      shell: bash
+      run: |
+        value='${{ inputs.semver }}'
+        allow_v_prefix='${{ inputs.allow-v-prefix }}'
+
+        if [ "$allow_v_prefix" = "true" ]; then
+          pattern='^v?[0-9]+\.[0-9]+\.[0-9]+$'
+        else
+          pattern='^[0-9]+\.[0-9]+\.[0-9]+$'
+        fi
+
+        if ! [[ "$value" =~ $pattern ]]; then
+          if [ "$allow_v_prefix" = "true" ]; then
+            echo "value must be a semver major.minor.patch string, optionally prefixed with v"
+          else
+            echo "value must be a semver major.minor.patch string"
+          fi
+          exit 1
+        fi
+
+        normalized="${value#v}"
+        echo "value=$value" >> "$GITHUB_OUTPUT"
+        echo "normalized=$normalized" >> "$GITHUB_OUTPUT"
