@@ -55,4 +55,5 @@ For OIDC-based publish, omit `npm-token` and ensure the workflow has `permission
 ## Notes
 
 - These are composite actions and do not require repository JavaScript dependencies.
+- `actions/create-release` uses the GitHub CLI and expects `gh` to be available on the runner.
 - The repo intentionally stays minimal: action metadata, docs, and Dependabot config only.

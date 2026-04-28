@@ -19,6 +19,11 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
+        if ! command -v gh >/dev/null 2>&1; then
+          echo "gh CLI is required on the runner"
+          exit 1
+        fi
+
         if ! [[ "${{ inputs.tag }}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "release tag must be a semver major.minor.patch value, optionally prefixed with v"
           exit 1
