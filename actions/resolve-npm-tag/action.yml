@@ -1,0 +1,38 @@
+name: Resolve npm dist-tag
+description: Resolve the npm dist-tag to use for a semver tag or version.
+inputs:
+  semver:
+    description: Semver version or tag to resolve, for example v1.2.3 or 1.2.3.
+    required: true
+outputs:
+  tag:
+    description: The resolved npm dist-tag.
+    value: ${{ steps.resolve.outputs.tag }}
+  version:
+    description: The normalized semver value.
+    value: ${{ steps.resolve.outputs.version }}
+runs:
+  using: composite
+  steps:
+    - name: Resolve dist-tag
+      id: resolve
+      shell: bash
+      run: |
+        version='${{ inputs.semver }}'
+        version="${version#v}"
+
+        if ! [[ "${{ inputs.semver }}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+          echo "semver must be a semver major.minor.patch string, optionally prefixed with v"
+          exit 1
+        fi
+
+        case "$version" in
+          *-alpha*) npm_tag=alpha ;;
+          *-beta*) npm_tag=beta ;;
+          *-next*) npm_tag=next ;;
+          *-canary*) npm_tag=canary ;;
+          *) npm_tag=latest ;;
+        esac
+
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        echo "tag=$npm_tag" >> "$GITHUB_OUTPUT"

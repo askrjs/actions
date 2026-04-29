@@ -23,14 +23,10 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Checkout repository
-      uses: actions/checkout@v5
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v5
-      with:
-        node-version: 'lts/*'
-        registry-url: ${{ inputs.registry }}
+    - name: Setup npm registry
+      shell: bash
+      run: |
+        npm config set registry "${{ inputs.registry }}"
 
     - name: Publish package
       shell: bash
@@ -42,8 +38,6 @@ runs:
         registry_host="${registry#https://}"
         registry_host="${registry_host#http://}"
         registry_host="${registry_host%/}"
-
-        npm config set registry "$registry"
 
         if [ -n "${{ inputs.npm-token }}" ]; then
           npm config set "//${registry_host}/:_authToken" "${{ inputs.npm-token }}"
