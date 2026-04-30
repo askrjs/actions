@@ -8,7 +8,7 @@ Reusable GitHub Actions for npm package repositories.
 - `actions/check-tag-exists` — check whether a git tag exists on a remote
 - `actions/create-tag` — create a git tag from a provided semver tag and push it to `origin`
 - `actions/create-release` — create a GitHub release from an existing semver tag
-- `actions/publish-package` — publish an npm package with provenance support using OIDC or an npm token
+- `actions/publish-package` — publish an npm package with provenance support using OIDC or an npm token and an explicit npm dist-tag
 - `actions/validate-semver` — validate a semver major.minor.patch value with optional `v` prefix support
 - `actions/validate-package-version` — ensure a package.json version matches a release tag
 - `actions/resolve-npm-tag` — map a semver tag to an npm dist-tag
@@ -25,9 +25,6 @@ actions.
 
 ```yaml
 uses: askrjs/actions/actions/compute-release-tag@main
-with:
-  package-json-path: package.json
-  tag-prefix: v
 ```
 
 Outputs `version` and `tag`.
@@ -38,7 +35,6 @@ Outputs `version` and `tag`.
 uses: askrjs/actions/actions/check-tag-exists@main
 with:
   tag: v1.2.3
-  remote: origin
 ```
 
 Outputs `exists`.
@@ -49,10 +45,9 @@ Outputs `exists`.
 uses: askrjs/actions/actions/create-tag@main
 with:
   tag: v1.2.3
-  git-user-name: github-actions[bot]
-  git-user-email: github-actions[bot]@users.noreply.github.com
-  tag-message: Release version from package.json
 ```
+
+Optional inputs include `remote`, `git-user-name`, `git-user-email`, and `tag-message`.
 
 ### Create a release from a tag
 
@@ -93,15 +88,14 @@ with:
   semver: v1.2.3-beta.1
 ```
 
+Outputs `npm_tag` and `version`.
+
 ### Publish a package to npm
 
 ```yaml
 uses: askrjs/actions/actions/publish-package@main
 with:
-  package-json-path: package.json
-  registry: https://registry.npmjs.org/
-  access: public
-  tag: latest
+  npm-tag: latest
   npm-token: ${{ secrets.NPM_TOKEN }}
 ```
 
