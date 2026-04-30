@@ -1,9 +1,9 @@
 name: Publish package to npm
-description: Publish an npm package and optionally use OIDC provenance when available.
+description: Publish an npm package with provenance support using an explicit npm dist-tag.
 inputs:
   package-json-path:
     description: Path to the package.json file for the package to publish.
-    required: true
+    required: false
     default: package.json
   registry:
     description: npm registry URL.
@@ -13,7 +13,7 @@ inputs:
     description: Package access level for publish.
     required: false
     default: public
-  tag:
+  npm-tag:
     description: npm dist-tag to publish under.
     required: false
     default: latest
@@ -46,4 +46,4 @@ runs:
           echo "No npm-token provided. Using OIDC auth if available."
         fi
 
-        npm publish . --tag "${{ inputs.tag }}" --access "${{ inputs.access }}" --provenance
+        npm publish . --tag "${{ inputs.npm-tag }}" --access "${{ inputs.access }}" --provenance

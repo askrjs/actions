@@ -4,19 +4,25 @@ inputs:
   tag:
     description: The tag to create, for example v1.2.3.
     required: true
+  remote:
+    description: The git remote to push the tag to.
+    required: false
+    default: origin
   git-user-name:
     description: Git user.name for the tag commit.
-    required: true
+    required: false
+    default: github-actions[bot]
   git-user-email:
     description: Git user.email for the tag commit.
-    required: true
+    required: false
+    default: github-actions[bot]@users.noreply.github.com
   tag-message:
     description: Annotation message for the created tag.
     required: false
     default: "Release version from package.json"
 outputs:
   tag:
-    description: The created tag name.
+    description: The tag name.
     value: ${{ steps.create.outputs.tag }}
 runs:
   using: composite
@@ -34,10 +40,11 @@ runs:
 
         git config user.name "${{ inputs.git-user-name }}"
         git config user.email "${{ inputs.git-user-email }}"
-        if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
-          echo "Tag $tag already exists on origin"
+        remote='${{ inputs.remote }}'
+        if git ls-remote --exit-code --tags "$remote" "refs/tags/$tag" >/dev/null 2>&1; then
+          echo "Tag $tag already exists on $remote"
         else
           git tag -a "$tag" -m "${{ inputs.tag-message }}"
-          git push origin "$tag"
+          git push "$remote" "$tag"
         fi
         echo "tag=$tag" >> "$GITHUB_OUTPUT"

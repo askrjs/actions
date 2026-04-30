@@ -3,7 +3,7 @@ description: Read package.json, validate the version, and compute a v-prefixed r
 inputs:
   package-json-path:
     description: Path to the package.json file.
-    required: true
+    required: false
     default: package.json
   tag-prefix:
     description: Prefix to prepend to the package version.

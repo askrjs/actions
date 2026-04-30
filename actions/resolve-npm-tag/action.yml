@@ -5,9 +5,9 @@ inputs:
     description: Semver version or tag to resolve, for example v1.2.3 or 1.2.3.
     required: true
 outputs:
-  tag:
+  npm_tag:
     description: The resolved npm dist-tag.
-    value: ${{ steps.resolve.outputs.tag }}
+    value: ${{ steps.resolve.outputs.npm_tag }}
   version:
     description: The normalized semver value.
     value: ${{ steps.resolve.outputs.version }}
@@ -35,4 +35,4 @@ runs:
         esac
 
         echo "version=$version" >> "$GITHUB_OUTPUT"
-        echo "tag=$npm_tag" >> "$GITHUB_OUTPUT"
+        echo "npm_tag=$npm_tag" >> "$GITHUB_OUTPUT"
