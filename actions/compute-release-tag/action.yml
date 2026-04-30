@@ -1,0 +1,37 @@
+name: Compute release tag
+description: Read package.json, validate the version, and compute a v-prefixed release tag.
+inputs:
+  package-json-path:
+    description: Path to the package.json file.
+    required: true
+    default: package.json
+  tag-prefix:
+    description: Prefix to prepend to the package version.
+    required: false
+    default: v
+outputs:
+  version:
+    description: The validated package version.
+    value: ${{ steps.compute.outputs.version }}
+  tag:
+    description: The computed release tag.
+    value: ${{ steps.compute.outputs.tag }}
+runs:
+  using: composite
+  steps:
+    - name: Compute release tag
+      id: compute
+      shell: bash
+      run: |
+        package_path="${{ inputs.package-json-path }}"
+        tag_prefix="${{ inputs.tag-prefix }}"
+        version=$(node -e "const fs = require('fs'); const path = process.argv[1]; const pkg = JSON.parse(fs.readFileSync(path, 'utf8')); if (!pkg.version) { throw new Error('package.json missing version'); } process.stdout.write(pkg.version);" "$package_path")
+
+        if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "package.json version must be a semver major.minor.patch string"
+          exit 1
+        fi
+
+        tag="${tag_prefix}${version}"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        echo "tag=$tag" >> "$GITHUB_OUTPUT"

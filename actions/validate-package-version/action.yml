@@ -15,9 +15,9 @@ outputs:
   tag:
     description: The validated release tag.
     value: ${{ steps.compare.outputs.tag }}
-  normalized_tag:
+  normalized:
     description: The validated release tag without a leading v prefix.
-    value: ${{ steps.compare.outputs.normalized_tag }}
+    value: ${{ steps.compare.outputs.normalized }}
 runs:
   using: composite
   steps:
@@ -29,18 +29,19 @@ runs:
         package_version=$(node -e "const fs = require('fs'); const path = process.argv[1]; const pkg = JSON.parse(fs.readFileSync(path, 'utf8')); if (!pkg.version) { throw new Error('package.json missing version'); } process.stdout.write(pkg.version);" "$package_path")
 
         tag='${{ inputs.tag }}'
-        normalized_tag="${tag#v}"
 
         if ! [[ "$tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "tag must be a semver major.minor.patch string, optionally prefixed with v"
           exit 1
         fi
 
-        if [ "$package_version" != "$normalized_tag" ]; then
+        normalized="${tag#v}"
+
+        if [ "$package_version" != "$normalized" ]; then
           echo "package version ($package_version) does not match tag (${{ inputs.tag }})"
           exit 1
         fi
 
         echo "version=$package_version" >> "$GITHUB_OUTPUT"
         echo "tag=$tag" >> "$GITHUB_OUTPUT"
-        echo "normalized_tag=$normalized_tag" >> "$GITHUB_OUTPUT"
+        echo "normalized=$normalized" >> "$GITHUB_OUTPUT"

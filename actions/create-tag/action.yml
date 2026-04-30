@@ -1,14 +1,9 @@
-name: Create tag from package version
-description: Create a git tag based on the current package.json version and push it to the origin remote.
+name: Create tag
+description: Create a git tag from a provided semver tag and push it to the origin remote if needed.
 inputs:
-  package-json-path:
-    description: Path to the package.json file.
+  tag:
+    description: The tag to create, for example v1.2.3.
     required: true
-    default: package.json
-  tag-prefix:
-    description: Prefix to prepend to the version when creating the tag.
-    required: false
-    default: v
   git-user-name:
     description: Git user.name for the tag commit.
     required: true
@@ -22,29 +17,21 @@ inputs:
 outputs:
   tag:
     description: The created tag name.
+    value: ${{ steps.create.outputs.tag }}
 runs:
   using: composite
   steps:
-    - name: Read package version
-      id: package_version
-      shell: bash
-      run: |
-        package_path="${{ inputs.package-json-path }}"
-
-        version=$(node -e "const fs = require('fs'); const path = process.argv[1]; const pkg = JSON.parse(fs.readFileSync(path, 'utf8')); if (!pkg.version) { throw new Error('package.json missing version'); } process.stdout.write(pkg.version);" "$package_path")
-        echo "version=$version" >> "$GITHUB_OUTPUT"
-
     - name: Create and push tag
+      id: create
       shell: bash
       run: |
-        version='${{ steps.package_version.outputs.version }}'
+        tag='${{ inputs.tag }}'
 
-        if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "package.json version must be a semver major.minor.patch string"
+        if ! [[ "$tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "tag must be a semver major.minor.patch string, optionally prefixed with v"
           exit 1
         fi
 
-        tag="${{ inputs.tag-prefix }}$version"
         git config user.name "${{ inputs.git-user-name }}"
         git config user.email "${{ inputs.git-user-email }}"
         if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
