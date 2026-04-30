@@ -1,0 +1,29 @@
+name: Check tag exists
+description: Check whether a git tag exists on a remote.
+inputs:
+  tag:
+    description: The tag to look up, for example v1.2.3.
+    required: true
+  remote:
+    description: The remote to check.
+    required: false
+    default: origin
+outputs:
+  exists:
+    description: Whether the tag exists on the remote.
+    value: ${{ steps.check.outputs.exists }}
+runs:
+  using: composite
+  steps:
+    - name: Check remote tag
+      id: check
+      shell: bash
+      run: |
+        tag='${{ inputs.tag }}'
+        remote='${{ inputs.remote }}'
+
+        if git ls-remote --exit-code --tags "$remote" "refs/tags/$tag" >/dev/null 2>&1; then
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "exists=false" >> "$GITHUB_OUTPUT"
+        fi

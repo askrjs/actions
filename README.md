@@ -4,7 +4,9 @@ Reusable GitHub Actions for npm package repositories.
 
 ## What this repo provides
 
-- `actions/create-tag` — create a git tag from the current `package.json` version and push it to `origin`
+- `actions/compute-release-tag` — read `package.json` and compute a semver release tag
+- `actions/check-tag-exists` — check whether a git tag exists on a remote
+- `actions/create-tag` — create a git tag from a provided semver tag and push it to `origin`
 - `actions/create-release` — create a GitHub release from an existing semver tag
 - `actions/publish-package` — publish an npm package with provenance support using OIDC or an npm token
 - `actions/validate-semver` — validate a semver major.minor.patch value with optional `v` prefix support
@@ -19,13 +21,34 @@ repository, and workflows that read package metadata must provide a Node.js
 runtime. The actions are intentionally standalone and do not call other shared
 actions.
 
-### Create a tag from package version
+### Compute a release tag
+
+```yaml
+uses: askrjs/actions/actions/compute-release-tag@main
+with:
+  package-json-path: package.json
+  tag-prefix: v
+```
+
+Outputs `version` and `tag`.
+
+### Check whether a tag exists
+
+```yaml
+uses: askrjs/actions/actions/check-tag-exists@main
+with:
+  tag: v1.2.3
+  remote: origin
+```
+
+Outputs `exists`.
+
+### Create a tag
 
 ```yaml
 uses: askrjs/actions/actions/create-tag@main
 with:
-  package-json-path: package.json
-  tag-prefix: v
+  tag: v1.2.3
   git-user-name: github-actions[bot]
   git-user-email: github-actions[bot]@users.noreply.github.com
   tag-message: Release version from package.json
@@ -49,6 +72,8 @@ with:
   semver: v1.2.3
 ```
 
+Outputs `value` and `normalized`.
+
 ### Validate a package version against a tag
 
 ```yaml
@@ -57,6 +82,8 @@ with:
   package-json-path: package.json
   tag: v1.2.3
 ```
+
+Outputs `version`, `tag`, and `normalized`.
 
 ### Resolve an npm dist-tag
 
@@ -82,6 +109,8 @@ For OIDC-based publish, omit `npm-token` and ensure the workflow has `permission
 
 ## Action permissions
 
+- `actions/compute-release-tag` has no special permissions requirements
+- `actions/check-tag-exists` has no special permissions requirements
 - `actions/create-tag` requires `contents: write` to push tags
 - `actions/create-release` requires `contents: write` to create releases
 - `actions/publish-package` requires `id-token: write` for OIDC publishing
