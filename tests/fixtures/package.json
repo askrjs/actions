@@ -1,0 +1,27 @@
+{
+  "name": "@askrjs/fixture",
+  "version": "0.0.1",
+  "description": "Askr package contract fixture",
+  "homepage": "https://github.com/askrjs/fixture#readme",
+  "bugs": { "url": "https://github.com/askrjs/fixture/issues" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/askrjs/fixture.git"
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": { "./package.json": "./package.json" },
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "build": "fixture",
+    "check": "fixture",
+    "lint": "fixture",
+    "pack:check": "fixture",
+    "prepack": "fixture",
+    "prepublishOnly": "fixture",
+    "test": "fixture",
+    "test:publint": "fixture",
+    "typecheck": "fixture"
+  },
+  "engines": { "node": ">=18" }
+}

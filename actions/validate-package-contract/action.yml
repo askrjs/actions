@@ -1,0 +1,84 @@
+name: Validate Askr package contract
+description: Validate the shared metadata and release-command contract for an Askr npm package.
+inputs:
+  package-json-path:
+    description: Path to the package.json file.
+    required: false
+    default: package.json
+outputs:
+  name:
+    description: Validated package name.
+    value: ${{ steps.validate.outputs.name }}
+  version:
+    description: Validated package version.
+    value: ${{ steps.validate.outputs.version }}
+runs:
+  using: composite
+  steps:
+    - name: Validate package contract
+      id: validate
+      shell: bash
+      run: |
+        node --input-type=module - '${{ inputs.package-json-path }}' <<'NODE'
+        import { readFileSync } from 'node:fs';
+
+        const packagePath = process.argv[2];
+        const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
+        const errors = [];
+        const requiredScripts = [
+          'build',
+          'check',
+          'lint',
+          'pack:check',
+          'test',
+          'test:publint',
+          'typecheck',
+        ];
+
+        if (!/^@askrjs\/[a-z0-9-]+$/.test(pkg.name ?? '')) {
+          errors.push('name must use the @askrjs scope');
+        }
+        if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(pkg.version ?? '')) {
+          errors.push('version must be semver');
+        }
+        if (pkg.version === '0.0.0') {
+          errors.push('version must start at 0.0.1 or higher');
+        }
+        if (typeof pkg.description !== 'string' || pkg.description.trim() === '') {
+          errors.push('description is required');
+        }
+        if (pkg.license !== 'Apache-2.0') errors.push('license must be Apache-2.0');
+        if (pkg.type !== 'module') errors.push('type must be module');
+        if (typeof pkg.engines?.node !== 'string') errors.push('engines.node is required');
+        if (pkg.publishConfig?.access !== 'public') {
+          errors.push('publishConfig.access must be public');
+        }
+        if (typeof pkg.repository?.url !== 'string') errors.push('repository.url is required');
+        if (typeof pkg.homepage !== 'string') errors.push('homepage is required');
+        if (typeof pkg.bugs?.url !== 'string') errors.push('bugs.url is required');
+        if (pkg.exports?.['./package.json'] !== './package.json') {
+          errors.push('exports["./package.json"] must expose package metadata');
+        }
+        for (const script of requiredScripts) {
+          if (typeof pkg.scripts?.[script] !== 'string') {
+            errors.push(`scripts.${script} is required`);
+          }
+        }
+        if (typeof pkg.scripts?.prepack !== 'string') errors.push('scripts.prepack is required');
+        if (typeof pkg.scripts?.prepublishOnly !== 'string') {
+          errors.push('scripts.prepublishOnly is required');
+        }
+
+        if (errors.length > 0) {
+          console.error(`Askr package contract failed for ${packagePath}:`);
+          for (const error of errors) console.error(`- ${error}`);
+          process.exit(1);
+        }
+
+        console.log(`Validated ${pkg.name}@${pkg.version}`);
+        NODE
+
+        name=$(node -p "require('./${{ inputs.package-json-path }}').name")
+        version=$(node -p "require('./${{ inputs.package-json-path }}').version")
+        echo "name=$name" >> "$GITHUB_OUTPUT"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
