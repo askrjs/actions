@@ -1,0 +1,83 @@
+name: Publish Askr package
+
+on:
+  workflow_call:
+    inputs:
+      install-playwright:
+        description: Install Chromium before the complete package gate.
+        required: false
+        type: boolean
+        default: false
+      release-command:
+        description: Complete release gate to run before tagging.
+        required: false
+        type: string
+        default: npm run check
+    secrets:
+      NPM_TOKEN:
+        required: false
+
+permissions:
+  contents: write
+  id-token: write
+  packages: read
+
+jobs:
+  publish:
+    name: Verify, tag, and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 'lts/*'
+          cache: npm
+
+      - name: Compute release tag
+        id: version
+        uses: askrjs/actions/actions/compute-release-tag@main
+
+      - name: Reject unreleased scaffolds
+        if: steps.version.outputs.version == '0.0.0'
+        shell: bash
+        run: |
+          echo 'Package version 0.0.0 is an unreleased scaffold and cannot be published.'
+          exit 1
+
+      - name: Check whether tag exists
+        id: tag_status
+        uses: askrjs/actions/actions/check-tag-exists@main
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+
+      - name: Verify an existing tag points to this commit
+        if: steps.tag_status.outputs.exists == 'true'
+        shell: bash
+        run: |
+          tag='${{ steps.version.outputs.tag }}'
+          git fetch origin "refs/tags/$tag:refs/tags/$tag"
+          test "$(git rev-list -n 1 "$tag")" = "$GITHUB_SHA"
+
+      - run: npm ci
+
+      - name: Validate Askr package contract
+        uses: askrjs/actions/actions/validate-package-contract@main
+
+      - name: Install Chromium
+        if: inputs.install-playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run complete release gate before tagging
+        run: ${{ inputs.release-command }}
+
+      - name: Create release tag
+        if: steps.tag_status.outputs.exists != 'true'
+        uses: askrjs/actions/actions/create-tag@main
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+
+      - name: Publish to npm
+        uses: askrjs/actions/actions/publish-package@main
+        with:
+          npm-token: ${{ secrets.NPM_TOKEN }}

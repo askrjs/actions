@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Shared Action Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 'lts/*'
+      - name: Exercise package contract action
+        uses: ./actions/validate-package-contract
+        with:
+          package-json-path: tests/fixtures/package.json
+      - name: Reject tracked OS metadata
+        shell: bash
+        run: test -z "$(find . -name .DS_Store -not -path './.git/*' -print -quit)"

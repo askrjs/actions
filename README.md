@@ -11,7 +11,9 @@ Reusable GitHub Actions for npm package repositories.
 - `actions/publish-package` — publish an npm package with provenance support using OIDC or an npm token and an explicit npm dist-tag
 - `actions/validate-semver` — validate a semver major.minor.patch value with optional `v` prefix support
 - `actions/validate-package-version` — ensure a package.json version matches a release tag
+- `actions/validate-package-contract` — enforce shared Askr package metadata and release commands
 - `actions/resolve-npm-tag` — map a semver tag to an npm dist-tag
+- `.github/workflows/publish-package.yml` — verify, tag, and publish a package only after its complete release gate
 
 ## Usage
 
@@ -20,6 +22,8 @@ repo. Workflows that use the git-based actions must check out the target
 repository, and workflows that read package metadata must provide a Node.js
 runtime. The actions are intentionally standalone and do not call other shared
 actions.
+
+The reusable publish workflow is called as a job after a repository's local CI workflow. Pass `install-playwright: true` for packages whose complete `check` includes browser tests. Version `0.0.0` is treated as an unreleased scaffold and is never published.
 
 ### Compute a release tag
 
@@ -80,6 +84,14 @@ with:
 
 Outputs `version`, `tag`, and `normalized`.
 
+### Validate an Askr package contract
+
+```yaml
+uses: askrjs/actions/actions/validate-package-contract@main
+```
+
+The action validates the common public metadata, Node engine declaration, and release-facing scripts documented in [PACKAGE_CONTRACT.md](PACKAGE_CONTRACT.md). It does not run the scripts; repository CI keeps those steps explicit.
+
 ### Resolve an npm dist-tag
 
 ```yaml
@@ -110,6 +122,7 @@ For OIDC-based publish, omit `npm-token` and ensure the workflow has `permission
 - `actions/publish-package` requires `id-token: write` for OIDC publishing
 - `actions/validate-semver` has no special permissions requirements
 - `actions/validate-package-version` has no special permissions requirements
+- `actions/validate-package-contract` has no special permissions requirements
 - `actions/resolve-npm-tag` has no special permissions requirements
 
 ## Notes
