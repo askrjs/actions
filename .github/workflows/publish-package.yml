@@ -13,10 +13,6 @@ on:
         required: false
         type: string
         default: npm run check
-    secrets:
-      NPM_TOKEN:
-        required: false
-
 permissions:
   contents: write
   id-token: write
@@ -28,15 +24,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 'lts/*'
           cache: npm
 
       - name: Compute release tag
         id: version
-        uses: askrjs/actions/actions/compute-release-tag@main
+        uses: askrjs/actions/actions/compute-release-tag@cfbfac63066d778fa1fa99247f6af43515155e4f
 
       - name: Reject unreleased scaffolds
         if: steps.version.outputs.version == '0.0.0'
@@ -47,7 +43,7 @@ jobs:
 
       - name: Check whether tag exists
         id: tag_status
-        uses: askrjs/actions/actions/check-tag-exists@main
+        uses: askrjs/actions/actions/check-tag-exists@cfbfac63066d778fa1fa99247f6af43515155e4f
         with:
           tag: ${{ steps.version.outputs.tag }}
 
@@ -62,7 +58,7 @@ jobs:
       - run: npm ci
 
       - name: Validate Askr package contract
-        uses: askrjs/actions/actions/validate-package-contract@main
+        uses: askrjs/actions/actions/validate-package-contract@cfbfac63066d778fa1fa99247f6af43515155e4f
 
       - name: Install Chromium
         if: inputs.install-playwright
@@ -73,11 +69,9 @@ jobs:
 
       - name: Create release tag
         if: steps.tag_status.outputs.exists != 'true'
-        uses: askrjs/actions/actions/create-tag@main
+        uses: askrjs/actions/actions/create-tag@cfbfac63066d778fa1fa99247f6af43515155e4f
         with:
           tag: ${{ steps.version.outputs.tag }}
 
       - name: Publish to npm
-        uses: askrjs/actions/actions/publish-package@main
-        with:
-          npm-token: ${{ secrets.NPM_TOKEN }}
+        uses: askrjs/actions/actions/publish-package@cfbfac63066d778fa1fa99247f6af43515155e4f

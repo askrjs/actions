@@ -17,9 +17,6 @@ inputs:
     description: npm dist-tag to publish under.
     required: false
     default: latest
-  npm-token:
-    description: Optional npm token fallback for authentication.
-    required: false
 runs:
   using: composite
   steps:
@@ -33,17 +30,5 @@ runs:
       run: |
         project_dir=$(dirname "${{ inputs.package-json-path }}")
         cd "$project_dir"
-
-        registry="${{ inputs.registry }}"
-        registry_host="${registry#https://}"
-        registry_host="${registry_host#http://}"
-        registry_host="${registry_host%/}"
-
-        if [ -n "${{ inputs.npm-token }}" ]; then
-          npm config set "//${registry_host}/:_authToken" "${{ inputs.npm-token }}"
-          npm config set "//${registry_host}/:always-auth" true
-        else
-          echo "No npm-token provided. Using OIDC auth if available."
-        fi
 
         npm publish . --tag "${{ inputs.npm-tag }}" --access "${{ inputs.access }}" --provenance
