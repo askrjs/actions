@@ -8,21 +8,44 @@ on:
         required: false
         type: boolean
         default: false
-      release-command:
-        description: Complete release gate to run before tagging.
-        required: false
-        type: string
-        default: npm run check
-permissions:
-  contents: write
-  id-token: write
-  packages: read
+permissions: {}
 
 jobs:
-  publish:
-    name: Verify, tag, and publish
+  verify:
+    name: Verify release
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 'lts/*'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Validate Askr package contract
+        uses: askrjs/actions/actions/validate-package-contract@4e94f4740a91900b999058c0e9601ba3623d61f7
+
+      - name: Install Chromium
+        if: inputs.install-playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run complete release gate
+        run: npm run check
+
+  publish:
+    name: Tag and publish
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+      packages: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
@@ -32,7 +55,7 @@ jobs:
 
       - name: Compute release tag
         id: version
-        uses: askrjs/actions/actions/compute-release-tag@cfbfac63066d778fa1fa99247f6af43515155e4f
+        uses: askrjs/actions/actions/compute-release-tag@4e94f4740a91900b999058c0e9601ba3623d61f7
 
       - name: Reject unreleased scaffolds
         if: steps.version.outputs.version == '0.0.0'
@@ -43,35 +66,29 @@ jobs:
 
       - name: Check whether tag exists
         id: tag_status
-        uses: askrjs/actions/actions/check-tag-exists@cfbfac63066d778fa1fa99247f6af43515155e4f
+        uses: askrjs/actions/actions/check-tag-exists@4e94f4740a91900b999058c0e9601ba3623d61f7
         with:
           tag: ${{ steps.version.outputs.tag }}
 
       - name: Verify an existing tag points to this commit
         if: steps.tag_status.outputs.exists == 'true'
         shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
-          tag='${{ steps.version.outputs.tag }}'
-          git fetch origin "refs/tags/$tag:refs/tags/$tag"
-          test "$(git rev-list -n 1 "$tag")" = "$GITHUB_SHA"
+          git fetch origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          test "$(git rev-list -n 1 "$RELEASE_TAG")" = "$GITHUB_SHA"
 
       - run: npm ci
 
       - name: Validate Askr package contract
-        uses: askrjs/actions/actions/validate-package-contract@cfbfac63066d778fa1fa99247f6af43515155e4f
-
-      - name: Install Chromium
-        if: inputs.install-playwright
-        run: npx playwright install --with-deps chromium
-
-      - name: Run complete release gate before tagging
-        run: ${{ inputs.release-command }}
+        uses: askrjs/actions/actions/validate-package-contract@4e94f4740a91900b999058c0e9601ba3623d61f7
 
       - name: Create release tag
         if: steps.tag_status.outputs.exists != 'true'
-        uses: askrjs/actions/actions/create-tag@cfbfac63066d778fa1fa99247f6af43515155e4f
+        uses: askrjs/actions/actions/create-tag@4e94f4740a91900b999058c0e9601ba3623d61f7
         with:
           tag: ${{ steps.version.outputs.tag }}
 
       - name: Publish to npm
-        uses: askrjs/actions/actions/publish-package@cfbfac63066d778fa1fa99247f6af43515155e4f
+        uses: askrjs/actions/actions/publish-package@4e94f4740a91900b999058c0e9601ba3623d61f7
