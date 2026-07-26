@@ -18,13 +18,15 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
+        INPUT_TAG: ${{ inputs.tag }}
+        INPUT_BODY: ${{ inputs.body }}
       run: |
         if ! command -v gh >/dev/null 2>&1; then
           echo "gh CLI is required on the runner"
           exit 1
         fi
 
-        tag='${{ inputs.tag }}'
+        tag=$INPUT_TAG
 
         if ! [[ "$tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "tag must be a semver major.minor.patch string, optionally prefixed with v"
@@ -34,4 +36,4 @@ runs:
         gh release create "$tag" \
           --repo "$GITHUB_REPOSITORY" \
           --title "$tag" \
-          --notes "${{ inputs.body }}"
+          --notes "$INPUT_BODY"

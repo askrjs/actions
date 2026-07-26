@@ -18,11 +18,14 @@ runs:
     - name: Validate package contract
       id: validate
       shell: bash
+      env:
+        INPUT_PACKAGE_JSON_PATH: ${{ inputs.package-json-path }}
       run: |
-        node --input-type=module - '${{ inputs.package-json-path }}' <<'NODE'
-        import { readFileSync } from 'node:fs';
+        node --input-type=module <<'NODE'
+        import { appendFileSync, readFileSync } from 'node:fs';
 
-        const packagePath = process.argv[2];
+        const packagePath = process.env.INPUT_PACKAGE_JSON_PATH;
+        if (!packagePath) throw new Error('package-json-path is required');
         const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
         const errors = [];
         const requiredScripts = [
@@ -76,9 +79,5 @@ runs:
         }
 
         console.log(`Validated ${pkg.name}@${pkg.version}`);
+        appendFileSync(process.env.GITHUB_OUTPUT, `name=${pkg.name}\nversion=${pkg.version}\n`);
         NODE
-
-        name=$(node -p "require('./${{ inputs.package-json-path }}').name")
-        version=$(node -p "require('./${{ inputs.package-json-path }}').version")
-        echo "name=$name" >> "$GITHUB_OUTPUT"
-        echo "version=$version" >> "$GITHUB_OUTPUT"

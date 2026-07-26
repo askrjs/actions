@@ -17,11 +17,13 @@ runs:
     - name: Resolve dist-tag
       id: resolve
       shell: bash
+      env:
+        INPUT_SEMVER: ${{ inputs.semver }}
       run: |
-        version='${{ inputs.semver }}'
+        version=$INPUT_SEMVER
         version="${version#v}"
 
-        if ! [[ "${{ inputs.semver }}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+        if ! [[ "$INPUT_SEMVER" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
           echo "semver must be a semver major.minor.patch string, optionally prefixed with v"
           exit 1
         fi
