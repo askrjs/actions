@@ -20,9 +20,12 @@ runs:
   steps:
     - id: validate
       shell: bash
+      env:
+        INPUT_SEMVER: ${{ inputs.semver }}
+        INPUT_ALLOW_V_PREFIX: ${{ inputs.allow-v-prefix }}
       run: |
-        value='${{ inputs.semver }}'
-        allow_v_prefix='${{ inputs.allow-v-prefix }}'
+        value=$INPUT_SEMVER
+        allow_v_prefix=$INPUT_ALLOW_V_PREFIX
 
         if [ "$allow_v_prefix" = "true" ]; then
           pattern='^v?[0-9]+\.[0-9]+\.[0-9]+$'

@@ -30,21 +30,27 @@ runs:
     - name: Create and push tag
       id: create
       shell: bash
+      env:
+        INPUT_TAG: ${{ inputs.tag }}
+        INPUT_REMOTE: ${{ inputs.remote }}
+        INPUT_GIT_USER_NAME: ${{ inputs.git-user-name }}
+        INPUT_GIT_USER_EMAIL: ${{ inputs.git-user-email }}
+        INPUT_TAG_MESSAGE: ${{ inputs.tag-message }}
       run: |
-        tag='${{ inputs.tag }}'
+        tag=$INPUT_TAG
 
         if ! [[ "$tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "tag must be a semver major.minor.patch string, optionally prefixed with v"
           exit 1
         fi
 
-        git config user.name "${{ inputs.git-user-name }}"
-        git config user.email "${{ inputs.git-user-email }}"
-        remote='${{ inputs.remote }}'
+        git config user.name "$INPUT_GIT_USER_NAME"
+        git config user.email "$INPUT_GIT_USER_EMAIL"
+        remote=$INPUT_REMOTE
         if git ls-remote --exit-code --tags "$remote" "refs/tags/$tag" >/dev/null 2>&1; then
           echo "Tag $tag already exists on $remote"
         else
-          git tag -a "$tag" -m "${{ inputs.tag-message }}"
+          git tag -a "$tag" -m "$INPUT_TAG_MESSAGE"
           git push "$remote" "$tag"
         fi
         echo "tag=$tag" >> "$GITHUB_OUTPUT"

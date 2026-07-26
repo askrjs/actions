@@ -22,13 +22,19 @@ runs:
   steps:
     - name: Setup npm registry
       shell: bash
+      env:
+        INPUT_REGISTRY: ${{ inputs.registry }}
       run: |
-        npm config set registry "${{ inputs.registry }}"
+        npm config set registry "$INPUT_REGISTRY"
 
     - name: Publish package
       shell: bash
+      env:
+        INPUT_PACKAGE_JSON_PATH: ${{ inputs.package-json-path }}
+        INPUT_NPM_TAG: ${{ inputs.npm-tag }}
+        INPUT_ACCESS: ${{ inputs.access }}
       run: |
-        project_dir=$(dirname "${{ inputs.package-json-path }}")
+        project_dir=$(dirname "$INPUT_PACKAGE_JSON_PATH")
         cd "$project_dir"
 
-        npm publish . --tag "${{ inputs.npm-tag }}" --access "${{ inputs.access }}" --provenance
+        npm publish . --tag "$INPUT_NPM_TAG" --access "$INPUT_ACCESS" --provenance
