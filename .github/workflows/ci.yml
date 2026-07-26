@@ -22,6 +22,8 @@ jobs:
           node-version: 'lts/*'
       - name: Reject action input shell interpolation
         run: node --test tests/action-input-safety.test.mjs
+      - name: Validate publish workflow privilege separation
+        run: node --test tests/publish-workflow-safety.test.mjs
       - name: Exercise package contract action
         uses: ./actions/validate-package-contract
         with:
