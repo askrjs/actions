@@ -18,9 +18,12 @@ runs:
     - name: Check remote tag
       id: check
       shell: bash
+      env:
+        INPUT_TAG: ${{ inputs.tag }}
+        INPUT_REMOTE: ${{ inputs.remote }}
       run: |
-        tag='${{ inputs.tag }}'
-        remote='${{ inputs.remote }}'
+        tag=$INPUT_TAG
+        remote=$INPUT_REMOTE
 
         if git ls-remote --exit-code --tags "$remote" "refs/tags/$tag" >/dev/null 2>&1; then
           echo "exists=true" >> "$GITHUB_OUTPUT"
