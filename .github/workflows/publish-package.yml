@@ -27,10 +27,6 @@ jobs:
 
       - run: npm ci
 
-      - name: Install browser engines
-        if: inputs.install-playwright
-        run: npx playwright install --with-deps chromium firefox webkit
-
       - name: Validate Askr package contract
         uses: askrjs/actions/actions/validate-package-contract@4e94f4740a91900b999058c0e9601ba3623d61f7
 
@@ -84,6 +80,10 @@ jobs:
           test "$(git rev-list -n 1 "$RELEASE_TAG")" = "$GITHUB_SHA"
 
       - run: npm ci
+
+      - name: Install browser engines
+        if: inputs.install-playwright
+        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Validate Askr package contract
         uses: askrjs/actions/actions/validate-package-contract@4e94f4740a91900b999058c0e9601ba3623d61f7
