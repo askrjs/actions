@@ -25,3 +25,11 @@ test("write and OIDC permissions are isolated to the post-verification job", asy
   assert.match(publishJob, /contents:\s*write/);
   assert.match(publishJob, /id-token:\s*write/);
 });
+
+test("browser release gates install every supported Playwright engine", async () => {
+  const workflow = await readFile(workflowUrl, "utf8");
+  assert.match(
+    workflow,
+    /npx playwright install --with-deps chromium firefox webkit/,
+  );
+});

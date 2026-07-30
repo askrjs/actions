@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       install-playwright:
-        description: Install Chromium before the complete package gate.
+        description: Install every supported Playwright browser before the complete package gate.
         required: false
         type: boolean
         default: false
@@ -30,9 +30,9 @@ jobs:
       - name: Validate Askr package contract
         uses: askrjs/actions/actions/validate-package-contract@4e94f4740a91900b999058c0e9601ba3623d61f7
 
-      - name: Install Chromium
+      - name: Install browser engines
         if: inputs.install-playwright
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Run complete release gate
         run: npm run check
