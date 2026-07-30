@@ -28,8 +28,8 @@ test("write and OIDC permissions are isolated to the post-verification job", asy
 
 test("browser release gates install every supported Playwright engine", async () => {
   const workflow = await readFile(workflowUrl, "utf8");
-  assert.match(
-    workflow,
-    /npx playwright install --with-deps chromium firefox webkit/,
+  const installs = workflow.match(
+    /npx playwright install --with-deps chromium firefox webkit/g,
   );
+  assert.equal(installs?.length, 2);
 });
