@@ -95,4 +95,4 @@ jobs:
           tag: ${{ steps.version.outputs.tag }}
 
       - name: Publish to npm
-        uses: askrjs/actions/actions/publish-package@4e94f4740a91900b999058c0e9601ba3623d61f7
+        run: npm publish --provenance --access public

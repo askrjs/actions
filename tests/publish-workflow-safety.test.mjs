@@ -9,6 +9,11 @@ test("the publish workflow does not execute caller-selected commands", async () 
   assert.doesNotMatch(workflow, /^\s+release-command:/m);
   assert.doesNotMatch(workflow, /run:\s*\$\{\{\s*inputs\./);
   assert.match(workflow, /name: Run complete release gate\n\s+run: npm run check/);
+  assert.match(
+    workflow,
+    /name: Publish to npm\n\s+run: npm publish --provenance --access public/,
+  );
+  assert.doesNotMatch(workflow, /actions\/publish-package/);
 });
 
 test("write and OIDC permissions are isolated to the post-verification job", async () => {
