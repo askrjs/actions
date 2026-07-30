@@ -8,7 +8,6 @@ Reusable GitHub Actions for npm package repositories.
 - `actions/check-tag-exists` — check whether a git tag exists on a remote
 - `actions/create-tag` — create a git tag from a provided semver tag and push it to `origin`
 - `actions/create-release` — create a GitHub release from an existing semver tag
-- `actions/publish-package` — publish an npm package with provenance support using OIDC or an npm token and an explicit npm dist-tag
 - `actions/validate-semver` — validate a semver major.minor.patch value with optional `v` prefix support
 - `actions/validate-package-version` — ensure a package.json version matches a release tag
 - `actions/validate-package-contract` — enforce shared Askr package metadata and release commands
@@ -102,24 +101,12 @@ with:
 
 Outputs `npm_tag` and `version`.
 
-### Publish a package to npm
-
-```yaml
-uses: askrjs/actions/actions/publish-package@main
-with:
-  npm-tag: latest
-  npm-token: ${{ secrets.NPM_TOKEN }}
-```
-
-For OIDC-based publish, omit `npm-token` and ensure the workflow has `permissions.id-token: write`.
-
 ## Action permissions
 
 - `actions/compute-release-tag` has no special permissions requirements
 - `actions/check-tag-exists` has no special permissions requirements
 - `actions/create-tag` requires `contents: write` to push tags
 - `actions/create-release` requires `contents: write` to create releases
-- `actions/publish-package` requires `id-token: write` for OIDC publishing
 - `actions/validate-semver` has no special permissions requirements
 - `actions/validate-package-version` has no special permissions requirements
 - `actions/validate-package-contract` has no special permissions requirements
