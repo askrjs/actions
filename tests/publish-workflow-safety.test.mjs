@@ -4,7 +4,7 @@ import test from "node:test";
 
 const workflowUrl = new URL("../.github/workflows/publish-package.yml", import.meta.url);
 
-test("the publish workflow does not execute caller-selected commands", async () => {
+test("should ensure the publish workflow does not execute caller-selected commands", async () => {
   const workflow = await readFile(workflowUrl, "utf8");
   assert.doesNotMatch(workflow, /^\s+release-command:/m);
   assert.doesNotMatch(workflow, /run:\s*\$\{\{\s*inputs\./);
@@ -16,7 +16,7 @@ test("the publish workflow does not execute caller-selected commands", async () 
   assert.doesNotMatch(workflow, /actions\/publish-package/);
 });
 
-test("write and OIDC permissions are isolated to the post-verification job", async () => {
+test("should ensure write and OIDC permissions are isolated to the post-verification job", async () => {
   const workflow = await readFile(workflowUrl, "utf8");
   const verifyStart = workflow.indexOf("\n  verify:");
   const publishStart = workflow.indexOf("\n  publish:");
@@ -31,7 +31,7 @@ test("write and OIDC permissions are isolated to the post-verification job", asy
   assert.match(publishJob, /id-token:\s*write/);
 });
 
-test("browser release gates install every supported Playwright engine", async () => {
+test("should ensure browser release gates install every supported Playwright engine", async () => {
   const workflow = await readFile(workflowUrl, "utf8");
   const verifyStart = workflow.indexOf("\n  verify:");
   const publishStart = workflow.indexOf("\n  publish:");

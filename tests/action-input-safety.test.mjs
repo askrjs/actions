@@ -33,7 +33,7 @@ function executableRunBlocks(yaml) {
   return blocks;
 }
 
-test("caller inputs never become executable action source", async () => {
+test("should ensure caller inputs never become executable action source", async () => {
   const violations = [];
   for (const manifest of await actionManifests()) {
     const yaml = await readFile(manifest, "utf8");
