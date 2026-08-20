@@ -12,7 +12,7 @@ Reusable GitHub Actions for npm package repositories.
 - `actions/validate-package-version` — ensure a package.json version matches a release tag
 - `actions/validate-package-contract` — enforce shared Askr package metadata and release commands
 - `actions/resolve-npm-tag` — map a semver tag to an npm dist-tag
-- `.github/workflows/publish-package.yml` — verify, tag, and publish a package only after its complete release gate
+- `.github/workflows/publish-package.yml` — verify, then tag and publish through the caller repository's `npm` environment
 
 ## Usage
 
@@ -22,7 +22,7 @@ repository, and workflows that read package metadata must provide a Node.js
 runtime. The actions are intentionally standalone and do not call other shared
 actions.
 
-The reusable publish workflow is called as a job after a repository's local CI workflow. Pass `install-playwright: true` for packages whose complete `check` includes browser tests. Version `0.0.0` is treated as an unreleased scaffold and is never published.
+The reusable publish workflow is called as a job after a repository's local CI workflow. Its write-capable publish job targets the caller repository's `npm` environment. Pass `install-playwright: true` for packages whose complete `check` includes browser tests. Version `0.0.0` is treated as an unreleased scaffold and is never published.
 
 ### Compute a release tag
 

@@ -19,16 +19,19 @@ jobs:
       contents: read
       packages: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
         with:
           node-version: 'lts/*'
           cache: npm
-
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
       - name: Validate Askr package contract
-        uses: askrjs/actions/actions/validate-package-contract@4e94f4740a91900b999058c0e9601ba3623d61f7
+        uses: askrjs/actions/actions/validate-package-contract@main
 
       - name: Install browser engines
         if: inputs.install-playwright
@@ -42,20 +45,23 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment: npm
     permissions:
       contents: write
       id-token: write
       packages: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
         with:
           node-version: 'lts/*'
           cache: npm
-
       - name: Compute release tag
         id: version
-        uses: askrjs/actions/actions/compute-release-tag@4e94f4740a91900b999058c0e9601ba3623d61f7
+        uses: askrjs/actions/actions/compute-release-tag@main
 
       - name: Reject unreleased scaffolds
         if: steps.version.outputs.version == '0.0.0'
@@ -66,10 +72,9 @@ jobs:
 
       - name: Check whether tag exists
         id: tag_status
-        uses: askrjs/actions/actions/check-tag-exists@4e94f4740a91900b999058c0e9601ba3623d61f7
+        uses: askrjs/actions/actions/check-tag-exists@main
         with:
           tag: ${{ steps.version.outputs.tag }}
-
       - name: Verify an existing tag points to this commit
         if: steps.tag_status.outputs.exists == 'true'
         shell: bash
@@ -79,20 +84,20 @@ jobs:
           git fetch origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
           test "$(git rev-list -n 1 "$RELEASE_TAG")" = "$GITHUB_SHA"
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
       - name: Install browser engines
         if: inputs.install-playwright
         run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Validate Askr package contract
-        uses: askrjs/actions/actions/validate-package-contract@4e94f4740a91900b999058c0e9601ba3623d61f7
+        uses: askrjs/actions/actions/validate-package-contract@main
 
       - name: Create release tag
         if: steps.tag_status.outputs.exists != 'true'
-        uses: askrjs/actions/actions/create-tag@4e94f4740a91900b999058c0e9601ba3623d61f7
+        uses: askrjs/actions/actions/create-tag@main
         with:
           tag: ${{ steps.version.outputs.tag }}
-
       - name: Publish to npm
         run: npm publish --provenance --access public
