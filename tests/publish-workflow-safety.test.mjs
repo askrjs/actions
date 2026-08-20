@@ -27,6 +27,7 @@ test("should ensure write and OIDC permissions are isolated to the post-verifica
   assert.doesNotMatch(verifyJob, /contents:\s*write/);
   assert.doesNotMatch(verifyJob, /id-token:\s*write/);
   assert.match(publishJob, /needs: verify/);
+  assert.match(publishJob, /environment:\s*npm/);
   assert.match(publishJob, /contents:\s*write/);
   assert.match(publishJob, /id-token:\s*write/);
 });
