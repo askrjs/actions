@@ -17,3 +17,6 @@ pnpm-lock.yaml
 # Build and logs
 coverage/
 *.log
+
+# Local agent state and worktrees
+.claude/
