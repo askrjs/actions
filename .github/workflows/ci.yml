@@ -34,3 +34,89 @@ jobs:
       - name: Reject tracked OS metadata
         shell: bash
         run: test -z "$(find . -name .DS_Store -not -path './.git/*' -print -quit)"
+
+  candidate-graph:
+    name: Candidate graph fixtures (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout repository with literal source line endings
+        uses: actions/checkout@v7
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+      - name: Select the reviewed builder Node version
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '24.21.0'
+      - name: Bootstrap the exact fixture npm CLI
+        shell: bash
+        run: npm install --prefix "$RUNNER_TEMP/askr-candidate-test-bootstrap" --ignore-scripts --no-audit --no-fund npm@12.0.1
+      - name: Exercise ordinary candidate installs and failure boundaries
+        shell: bash
+        env:
+          CANDIDATE_TEST_NPM_CLI: ${{ runner.temp }}/askr-candidate-test-bootstrap/node_modules/npm/bin/npm-cli.js
+        run: node tests/candidate-graph.test.mjs
+      - name: Record actual cleanup fixture coordinates
+        id: cleanup-fixture
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import { createHash } from 'node:crypto';
+          import { readFileSync, appendFileSync } from 'node:fs';
+          const digest = createHash('sha256').update(readFileSync('fixtures/0.5.0-candidate-graph.TEMPLATE.json')).digest('hex');
+          appendFileSync(process.env.GITHUB_OUTPUT, 'manifest-sha256=' + digest + '\n');
+          JS
+      - name: Start an owned fixture at the actual composite cleanup root
+        shell: bash
+        env:
+          MANIFEST_SHA256: ${{ steps.cleanup-fixture.outputs.manifest-sha256 }}
+        run: |
+          node --input-type=module <<'JS'
+          import { mkdir, writeFile, readFile } from 'node:fs/promises';
+          import { join } from 'node:path';
+          import { startRegistry } from './actions/qualify-candidate-graph/qualify.mjs';
+          const root = join(process.env.RUNNER_TEMP, 'askr-0.5-candidate-' + process.env.MANIFEST_SHA256);
+          await mkdir(root, { recursive: true });
+          await writeFile(join(root, 'manifest.json'), await readFile('fixtures/0.5.0-candidate-graph.TEMPLATE.json'));
+          const info = await startRegistry(root);
+          console.log(JSON.stringify({ fixture: 'owned detached cleanup only; not final graph prepare', ...info }));
+          JS
+      - name: Exercise the actual nonpublishing composite cleanup boundary
+        uses: ./actions/qualify-candidate-graph
+        with:
+          phase: cleanup
+          manifest-ref: ${{ github.sha }}
+          manifest-sha256: ${{ steps.cleanup-fixture.outputs.manifest-sha256 }}
+      - name: Prove the actual composite stopped its owned detached fixture
+        shell: bash
+        env:
+          MANIFEST_SHA256: ${{ steps.cleanup-fixture.outputs.manifest-sha256 }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import { readFile } from 'node:fs/promises';
+          import { join } from 'node:path';
+          const root = join(process.env.RUNNER_TEMP, 'askr-0.5-candidate-' + process.env.MANIFEST_SHA256);
+          const info = JSON.parse(await readFile(join(root, 'server.json'), 'utf8'));
+          const cleanup = JSON.parse(await readFile(join(root, 'cleanup.json'), 'utf8'));
+          assert.equal(cleanup.stopped, true);
+          assert.equal(cleanup.id, info.id);
+          assert.equal(cleanup.pid, info.pid);
+          await assert.rejects(fetch(info.registry + '__askr-health', { signal: AbortSignal.timeout(2000) }));
+          console.log('Actual composite owned-process cleanup identity and health assertions passed');
+          JS
+      - name: Preserve candidate fixture receipts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: candidate-helper-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/askr-candidate-tests/**/*.json
+            ${{ runner.temp }}/askr-candidate-tests/**/*.log
+          if-no-files-found: warn
