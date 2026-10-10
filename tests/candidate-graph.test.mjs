@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdir, cp, stat, lstat } from 'node:fs/promises';
 import { join, delimiter, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { createRegistry } from '../actions/qualify-candidate-graph/registry.mjs';
@@ -222,6 +222,165 @@ assert.ok(
 );
 try {
   assert.equal(process.version, 'v24.21.0');
+  await check(
+    'Committed source and private builder checkout preserve exact bytes',
+    async () => {
+      const source = fileURLToPath(new URL('..', import.meta.url));
+      const options = { cwd: source, env: baseEnv };
+      const head = command('git', ['rev-parse', 'HEAD'], options);
+      const tracked = command(
+        'git',
+        ['ls-tree', '-r', '--name-only', '-z', head],
+        { ...options, trimOutput: false }
+      )
+        .split('\0')
+        .filter(Boolean);
+      const rows = [];
+      for (const path of tracked) {
+        const expected = command(
+          'git',
+          ['cat-file', 'blob', head + ':' + path],
+          {
+            ...options,
+            encoding: null,
+            trimOutput: false,
+          }
+        );
+        const actual = await readFile(join(source, path));
+        rows.push({
+          path,
+          blobSha256: sha(expected),
+          checkoutSha256: sha(actual),
+        });
+      }
+      assert.deepEqual(
+        rows.filter((row) => row.blobSha256 !== row.checkoutSha256),
+        [],
+        'Checkout bytes differ from committed Git blobs; preserve LF before qualification'
+      );
+      const producer = join(root, 'checkout-producer');
+      await mkdir(producer);
+      command('git', ['init', '--quiet'], { cwd: producer, env: baseEnv });
+      const packageJson =
+        JSON.stringify({
+          name: '@askrjs/schema',
+          version: '0.5.0',
+          type: 'module',
+          packageManager: 'npm@12.0.1',
+          scripts: { build: 'node build.mjs', prepack: 'npm run build' },
+        }) + '\n';
+      const lockJson =
+        JSON.stringify({
+          name: '@askrjs/schema',
+          version: '0.5.0',
+          lockfileVersion: 3,
+          packages: { '': { name: '@askrjs/schema', version: '0.5.0' } },
+        }) + '\n';
+      const license =
+        'Owned immutable extensionless license fixture\nSecond LF line\n';
+      await writeFile(join(producer, 'package.json'), packageJson);
+      await writeFile(join(producer, 'package-lock.json'), lockJson);
+      await writeFile(
+        join(producer, 'build.mjs'),
+        "import { writeFileSync } from 'node:fs';\nwriteFileSync('index.js', 'export {};\\n');\n"
+      );
+      await writeFile(
+        join(producer, '.gitattributes'),
+        '* text=auto\n*.json text eol=lf\n*.cmd text eol=crlf\n'
+      );
+      await writeFile(join(producer, 'LICENSE'), license);
+      await writeFile(
+        join(producer, 'windows.cmd'),
+        '@echo off\r\necho fixture\r\n'
+      );
+      const commitId = commit(
+        producer,
+        'Freeze owned extensionless checkout bytes'
+      );
+      const entry = {
+        name: '@askrjs/schema',
+        repo: 'askrjs/askr-schema',
+        commit: commitId,
+        tree: command('git', ['rev-parse', 'HEAD^{tree}'], {
+          cwd: producer,
+          env: baseEnv,
+        }),
+        packageJsonSha256: sha(Buffer.from(packageJson)),
+        lockSha256: sha(Buffer.from(lockJson)),
+      };
+      const template = join(root, 'checkout-template');
+      await mkdir(template);
+      await writeFile(
+        join(template, 'config'),
+        '[core]\n\teol = crlf\n[url "' +
+          pathToFileURL(producer).href +
+          '"]\n\tinsteadOf = https://github.com/askrjs/askr-schema.git\n'
+      );
+      const privateModule = join(root, 'private-checkout-module');
+      await mkdir(privateModule);
+      await cp(
+        join(source, 'actions/qualify-candidate-graph/registry.mjs'),
+        join(privateModule, 'registry.mjs')
+      );
+      await writeFile(
+        join(privateModule, 'qualify.mjs'),
+        (await readFile(
+          join(source, 'actions/qualify-candidate-graph/qualify.mjs'),
+          'utf8'
+        )) + '\nexport { checkout };\n'
+      );
+      const { checkout } = await import(
+        pathToFileURL(join(privateModule, 'qualify.mjs')).href
+      );
+      const names = [
+        'GIT_TEMPLATE_DIR',
+        'GIT_CONFIG_COUNT',
+        'GIT_CONFIG_PARAMETERS',
+      ];
+      const previous = Object.fromEntries(
+        names.map((name) => [name, process.env[name]])
+      );
+      const destination = join(root, 'private-checkout-result');
+      try {
+        process.env.GIT_TEMPLATE_DIR = template;
+        process.env.GIT_CONFIG_COUNT = '0';
+        delete process.env.GIT_CONFIG_PARAMETERS;
+        await checkout(entry, destination);
+      } finally {
+        for (const name of names) {
+          if (previous[name] === undefined) delete process.env[name];
+          else process.env[name] = previous[name];
+        }
+      }
+      assert.equal(
+        command('git', ['config', '--local', '--get', 'core.eol'], {
+          cwd: destination,
+          env: baseEnv,
+        }),
+        'crlf'
+      );
+      assert.equal(
+        await readFile(join(destination, 'LICENSE'), 'utf8'),
+        license,
+        'private producer checkout must override native/default CRLF for extensionless text'
+      );
+      assert.equal(
+        await readFile(join(destination, 'windows.cmd'), 'utf8'),
+        '@echo off\r\necho fixture\r\n',
+        'explicit repository EOL attributes still own Windows scripts'
+      );
+      return {
+        head,
+        checkedFiles: rows.length,
+        rawBlobComparison: true,
+        rows,
+        privateCheckoutExecuted: true,
+        extensionlessLicensePreserved: true,
+        explicitWindowsAttributesPreserved: true,
+        publicSourceFetch: false,
+      };
+    }
+  );
   await check('Pinned toolchain actually installed and selected', async () => {
     command(
       process.execPath,
@@ -949,6 +1108,52 @@ try {
   await check(
     'Cleanup identifies owned server, rejects stale reuse and restores registry environment',
     async () => {
+      const observedModule = join(root, 'observed-health-module');
+      await mkdir(observedModule);
+      const helperSource = fileURLToPath(
+        new URL('../actions/qualify-candidate-graph/', import.meta.url)
+      );
+      await cp(
+        join(helperSource, 'qualify.mjs'),
+        join(observedModule, 'qualify.mjs')
+      );
+      const observedRequests = join(root, 'observed-health-requests.jsonl');
+      const observer = `import { channel } from 'node:diagnostics_channel';\nimport { appendFileSync } from 'node:fs';\nchannel('http.server.request.start').subscribe(({ request, socket }) => { if (request.url === '/__askr-health') appendFileSync(${JSON.stringify(observedRequests)}, JSON.stringify({ connection: request.headers.connection, remotePort: socket.remotePort }) + '\\n'); });\n`;
+      await writeFile(
+        join(observedModule, 'registry.mjs'),
+        observer + (await readFile(join(helperSource, 'registry.mjs'), 'utf8'))
+      );
+      const observedHelper = await import(
+        pathToFileURL(join(observedModule, 'qualify.mjs')).href
+      );
+      const observedRoot = join(root, 'observed-health-owner');
+      await mkdir(observedRoot);
+      const observedInfo = await observedHelper.startRegistry(observedRoot);
+      active.push(observedRoot);
+      await observedHelper.stopRegistry(observedRoot);
+      await observedHelper.stopRegistry(observedRoot);
+      const healthRequests = (await readFile(observedRequests, 'utf8'))
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line));
+      assert.ok(
+        healthRequests.length >= 2,
+        'actual ready and owned-stop health requests must be observed'
+      );
+      assert.ok(
+        healthRequests.every((request) => request.connection === 'close'),
+        'health checks must not retain pooled sockets across owned termination'
+      );
+      assert.notEqual(
+        healthRequests[0].remotePort,
+        healthRequests.at(-1).remotePort,
+        'readiness and termination must use separate actual connections'
+      );
+      assert.equal(
+        JSON.parse(await readFile(join(observedRoot, 'cleanup.json'), 'utf8'))
+          .id,
+        observedInfo.id
+      );
       await assert.rejects(
         startRegistry(assembly.root),
         /existing registry metadata/
@@ -989,6 +1194,8 @@ try {
         idempotentStop: true,
         serverNoLongerReachable: true,
         scopedAndUnscopedEnvReset: true,
+        healthRequests,
+        nonPooledOwnedHealthConnections: true,
       };
     }
   );

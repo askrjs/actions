@@ -47,9 +47,11 @@ jobs:
       - name: Checkout repository with literal source line endings
         uses: actions/checkout@v7
         env:
-          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_COUNT: '2'
           GIT_CONFIG_KEY_0: core.autocrlf
           GIT_CONFIG_VALUE_0: 'false'
+          GIT_CONFIG_KEY_1: core.eol
+          GIT_CONFIG_VALUE_1: lf
       - name: Select the reviewed builder Node version
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:

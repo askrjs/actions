@@ -427,6 +427,7 @@ export async function startRegistry(root) {
       );
       assert.equal(info.pid, child.pid, 'stale registry process metadata');
       const health = await fetch(info.registry + '__askr-health', {
+        headers: { Connection: 'close' },
         signal: AbortSignal.timeout(1000),
       });
       assert.equal(
@@ -467,6 +468,7 @@ export async function stopRegistry(root) {
       throw error;
     }
     const health = await fetch(info.registry + '__askr-health', {
+      headers: { Connection: 'close' },
       signal: AbortSignal.timeout(2000),
     });
     const actual = await health.json();
@@ -475,6 +477,7 @@ export async function stopRegistry(root) {
     for (let attempt = 0; attempt < 100; attempt++) {
       try {
         await fetch(info.registry + '__askr-health', {
+          headers: { Connection: 'close' },
           signal: AbortSignal.timeout(200),
         });
       } catch {
@@ -519,6 +522,8 @@ async function checkout(entry, source) {
     [
       '-c',
       'core.autocrlf=false',
+      '-c',
+      'core.eol=lf',
       'checkout',
       '--quiet',
       '--detach',

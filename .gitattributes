@@ -1,5 +1,5 @@
 # Enforce consistent text handling and LF line endings
-* text=auto
+* text=auto eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
 *.md text eol=lf
