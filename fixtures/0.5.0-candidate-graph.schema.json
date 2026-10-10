@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/askrjs/actions/fixtures/0.5.0-candidate-graph.schema.json",
+  "title": "Frozen Askr 0.5.0 builder archive graph",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "release", "complete", "toolchain", "packages"],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "release": {
+      "const": "0.5.0"
+    },
+    "complete": {
+      "const": true
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node", "npm"],
+      "properties": {
+        "node": {
+          "const": "24.21.0"
+        },
+        "npm": {
+          "const": "12.0.1"
+        }
+      }
+    },
+    "packages": {
+      "type": "array",
+      "minItems": 18,
+      "maxItems": 18,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "repo",
+          "commit",
+          "tree",
+          "packageJsonSha256",
+          "lockSha256",
+          "archiveSha512"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "repo": {
+            "type": "string"
+          },
+          "commit": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{40}$"
+          },
+          "tree": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{40}$"
+          },
+          "packageJsonSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "lockSha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "archiveSha512": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{128}$"
+          }
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/askr"
+              },
+              "repo": {
+                "const": "askrjs/askr"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/auth"
+              },
+              "repo": {
+                "const": "askrjs/askr-auth"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/charts"
+              },
+              "repo": {
+                "const": "askrjs/askr-charts"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/cli"
+              },
+              "repo": {
+                "const": "askrjs/askr-cli"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/fetch"
+              },
+              "repo": {
+                "const": "askrjs/askr-fetch"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/i18n"
+              },
+              "repo": {
+                "const": "askrjs/askr-i18n"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/logos"
+              },
+              "repo": {
+                "const": "askrjs/askr-logos"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/lucide"
+              },
+              "repo": {
+                "const": "askrjs/askr-lucide"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/monaco"
+              },
+              "repo": {
+                "const": "askrjs/askr-monaco"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/node"
+              },
+              "repo": {
+                "const": "askrjs/askr-node"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/orm"
+              },
+              "repo": {
+                "const": "askrjs/askr-orm"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/otel"
+              },
+              "repo": {
+                "const": "askrjs/askr-otel"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/schema"
+              },
+              "repo": {
+                "const": "askrjs/askr-schema"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/server"
+              },
+              "repo": {
+                "const": "askrjs/askr-server"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/testing"
+              },
+              "repo": {
+                "const": "askrjs/askr-testing"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/themes"
+              },
+              "repo": {
+                "const": "askrjs/askr-themes"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/ui"
+              },
+              "repo": {
+                "const": "askrjs/askr-ui"
+              }
+            }
+          },
+          {
+            "properties": {
+              "name": {
+                "const": "@askrjs/vite"
+              },
+              "repo": {
+                "const": "askrjs/askr-vite"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$comment": "Runtime validation additionally requires exactly one entry per supported package name, since JSON Schema uniqueItems alone does not enforce unique name properties."
+}

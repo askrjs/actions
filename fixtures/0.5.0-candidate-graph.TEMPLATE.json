@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "release": "0.5.0",
+  "complete": false,
+  "toolchain": {
+    "node": "24.21.0",
+    "npm": "12.0.1"
+  },
+  "packages": [
+    {
+      "name": "@askrjs/askr",
+      "repo": "askrjs/askr",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/auth",
+      "repo": "askrjs/askr-auth",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/charts",
+      "repo": "askrjs/askr-charts",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/cli",
+      "repo": "askrjs/askr-cli",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/fetch",
+      "repo": "askrjs/askr-fetch",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/i18n",
+      "repo": "askrjs/askr-i18n",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/logos",
+      "repo": "askrjs/askr-logos",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/lucide",
+      "repo": "askrjs/askr-lucide",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/monaco",
+      "repo": "askrjs/askr-monaco",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/node",
+      "repo": "askrjs/askr-node",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/orm",
+      "repo": "askrjs/askr-orm",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/otel",
+      "repo": "askrjs/askr-otel",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/schema",
+      "repo": "askrjs/askr-schema",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/server",
+      "repo": "askrjs/askr-server",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/testing",
+      "repo": "askrjs/askr-testing",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/themes",
+      "repo": "askrjs/askr-themes",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/ui",
+      "repo": "askrjs/askr-ui",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    },
+    {
+      "name": "@askrjs/vite",
+      "repo": "askrjs/askr-vite",
+      "commit": "FILL_REVIEWED_BUILDER_COMMIT",
+      "tree": "FILL_REVIEWED_BUILDER_TREE",
+      "packageJsonSha256": "FILL_REVIEWED_MANIFEST_SHA256",
+      "lockSha256": "FILL_REVIEWED_LOCK_SHA256",
+      "archiveSha512": "FILL_REVIEWED_ARCHIVE_SHA512"
+    }
+  ]
+}

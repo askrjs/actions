@@ -12,6 +12,7 @@ Reusable GitHub Actions for npm package repositories.
 - `actions/validate-package-version` — ensure a package.json version matches a release tag
 - `actions/validate-package-contract` — enforce shared Askr package metadata and release commands
 - `actions/resolve-npm-tag` — map a semver tag to an npm dist-tag
+- `actions/qualify-candidate-graph` — reconstruct the reviewed 0.5.0 graph locally for ordinary prepublication CI
 - `.github/workflows/publish-package.yml` — verify, then tag and publish through the caller repository's `npm` environment
 
 ## Usage
@@ -19,8 +20,9 @@ Reusable GitHub Actions for npm package repositories.
 These composite actions are intended to be consumed directly from this public
 repo. Workflows that use the git-based actions must check out the target
 repository, and workflows that read package metadata must provide a Node.js
-runtime. The actions are intentionally standalone and do not call other shared
-actions.
+runtime. The git/metadata actions are standalone. The release-specific candidate helper
+selects its reviewed Node/npm toolchain and owns a temporary GET-only loopback
+registry; its exact boundaries are documented below.
 
 The reusable publish workflow is called as a job after a repository's local CI workflow. Its write-capable publish job targets the caller repository's `npm` environment. Pass `install-playwright: true` for packages whose complete `check` includes browser tests. Version `0.0.0` is treated as an unreleased scaffold and is never published.
 
@@ -58,7 +60,7 @@ Optional inputs include `remote`, `git-user-name`, `git-user-email`, and `tag-me
 uses: askrjs/actions/actions/create-release@main
 with:
   tag: v1.2.3
-  body: "Release created from package version tag"
+  body: 'Release created from package version tag'
   github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
@@ -117,3 +119,17 @@ Outputs `npm_tag` and `version`.
 - These are composite actions and do not require repository JavaScript dependencies.
 - `actions/create-release` uses the GitHub CLI and expects `gh` to be available on the runner.
 - The repo intentionally stays minimal: action metadata, docs, and Dependabot config only.
+
+## Prepublication 0.5.0 candidate qualification
+
+[Candidate qualification](docs/0.5-candidate-qualification.md) documents the
+release-specific helper, its three phases, immutable helper/manifest pins and
+normal install/pack checks. It supports the 18 fixed producers and ordinary
+Examples, Website and Destroyer consumers. It cannot publish, create tags or
+change npm dist-tags, and needs only `contents: read`.
+
+The committed template is intentionally incomplete and always rejects as a
+release manifest. Integrate the reviewed helper first; freeze the complete
+18-package manifest separately after all reviewed builder commits are public.
+Actual hosted reconstruction and current-repository gates must pass before
+calling the graph qualified.

@@ -1,0 +1,53 @@
+name: Qualify the frozen Askr 0.5 candidate graph
+description: Rebuild reviewed public source inputs into identical local npm archives before ordinary CI.
+inputs:
+  phase:
+    description: prepare before npm ci, verify-current after the existing complete gate, or cleanup with always().
+    required: false
+    default: prepare
+  manifest-ref:
+    description: Immutable askrjs/actions commit containing fixtures/0.5.0-candidate-graph.json.
+    required: true
+  manifest-sha256:
+    description: Reviewed SHA256 of that complete manifest.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Validate qualification coordinates
+      shell: bash
+      env:
+        PHASE: ${{ inputs.phase }}
+        MANIFEST_REF: ${{ inputs.manifest-ref }}
+        MANIFEST_SHA256: ${{ inputs.manifest-sha256 }}
+      run: |
+        [[ "$PHASE" =~ ^(prepare|verify-current|cleanup)$ ]] || { echo 'Unsupported qualification phase' >&2; exit 1; }
+        [[ "$MANIFEST_REF" =~ ^[a-f0-9]{40}$ ]] || { echo 'manifest-ref must be an immutable lowercase 40-character commit' >&2; exit 1; }
+        [[ "$MANIFEST_SHA256" =~ ^[a-f0-9]{64}$ ]] || { echo 'manifest-sha256 must be a lowercase SHA256 digest' >&2; exit 1; }
+
+    - name: Set the frozen builder Node version
+      if: inputs.phase != 'cleanup'
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7, read back 2026-10-10
+      with:
+        node-version: '24.21.0'
+
+    - name: Set the frozen builder npm version
+      if: inputs.phase == 'prepare'
+      shell: bash
+      run: |
+        npm install --prefix "$RUNNER_TEMP/askr-candidate-toolchain" --ignore-scripts --no-audit --no-fund npm@12.0.1
+
+    - name: Restore the frozen npm CLI after Node setup
+      if: inputs.phase != 'cleanup'
+      shell: bash
+      run: |
+        test -f "$RUNNER_TEMP/askr-candidate-toolchain/node_modules/npm/bin/npm-cli.js"
+        echo "$RUNNER_TEMP/askr-candidate-toolchain/node_modules/.bin" >> "$GITHUB_PATH"
+
+    - name: Run the explicit qualification phase
+      shell: bash
+      env:
+        PHASE: ${{ inputs.phase }}
+        MANIFEST_REF: ${{ inputs.manifest-ref }}
+        MANIFEST_SHA256: ${{ inputs.manifest-sha256 }}
+      run: node "$GITHUB_ACTION_PATH/qualify.mjs"
