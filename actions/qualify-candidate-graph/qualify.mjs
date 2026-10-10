@@ -146,8 +146,8 @@ export function command(commandName, args, options = {}) {
     encoding: 'utf8',
     maxBuffer: 10 * 1024 * 1024,
     windowsHide: true,
-    shell: false,
     ...spawnOptions,
+    shell: false,
   });
   if (logFile)
     writeFileSync(

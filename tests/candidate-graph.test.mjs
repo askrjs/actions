@@ -4,6 +4,8 @@ import { join, delimiter, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { createServer } from 'node:http';
+import { createRegistry } from '../actions/qualify-candidate-graph/registry.mjs';
 import {
   validateManifest,
   REPOS,
@@ -245,6 +247,123 @@ try {
       lifecyclePath: baseEnv[pathKey],
     };
   });
+  await check(
+    'Native command arguments stay literal even when caller requests a shell',
+    async () => {
+      const cwd = join(root, 'literal-command-control');
+      await mkdir(cwd, { recursive: true });
+      await writeFile(
+        join(cwd, 'argv.mjs'),
+        'process.stdout.write(JSON.stringify(process.argv.slice(2)));\n'
+      );
+      const marker = join(cwd, 'shell-marker.txt');
+      const args = [
+        'literal & echo injected > shell-marker.txt',
+        'literal; echo injected',
+        '$(echo substitution)',
+        '`echo substitution`',
+        'a | b',
+        'a > b',
+        'quotes "and" spaces',
+        'a\nb',
+      ];
+      for (const value of args) {
+        const output = command(process.execPath, ['argv.mjs', value], {
+          cwd,
+          env: baseEnv,
+          shell: true,
+        });
+        assert.deepEqual(JSON.parse(output), [value]);
+        await assert.rejects(stat(marker), { code: 'ENOENT' });
+      }
+      return {
+        literalArguments: args.length,
+        shellOverrideIgnored: true,
+        markerAbsent: true,
+      };
+    }
+  );
+  await check(
+    'Public GET transport fixes npm origin and rejects actual redirect following',
+    async () => {
+      const nativeFetch = globalThis.fetch;
+      let followed = 0;
+      const calls = [];
+      const target = createServer((request, response) => {
+        followed++;
+        response.end('redirect target must never be reached');
+      });
+      await new Promise((resolve) => target.listen(0, '127.0.0.1', resolve));
+      const upstream = createServer((request, response) => {
+        if (request.url.startsWith('/redirect-fixture')) {
+          response.writeHead(302, {
+            location: `http://127.0.0.1:${target.address().port}/redirect-target`,
+          });
+          response.end();
+        } else {
+          response.setHeader('content-type', 'application/json');
+          response.end(JSON.stringify({ path: request.url }));
+        }
+      });
+      await new Promise((resolve) => upstream.listen(0, '127.0.0.1', resolve));
+      const local = await createRegistry(
+        join(root, 'literal-upstream-control')
+      );
+      try {
+        globalThis.fetch = async (input, options) => {
+          const url = new URL(String(input));
+          assert.equal(url.origin, 'https://registry.npmjs.org');
+          calls.push({ target: String(input), redirect: options.redirect });
+          // Use native Node fetch and two real local servers to exercise the
+          // same redirect option without issuing any public network request.
+          return nativeFetch(
+            `http://127.0.0.1:${upstream.address().port}${url.pathname}${url.search}`,
+            options
+          );
+        };
+        const rejected = await nativeFetch(
+          local.info.registry + 'redirect-fixture?control=1'
+        );
+        await rejected.text();
+        assert.equal(rejected.status, 502);
+        assert.equal(followed, 0);
+        assert.deepEqual(calls[0], {
+          target: 'https://registry.npmjs.org/redirect-fixture?control=1',
+          redirect: 'error',
+        });
+        const accepted = await nativeFetch(
+          local.info.registry + 'plain%20metadata?view=source'
+        );
+        assert.equal(accepted.status, 200);
+        assert.deepEqual(await accepted.json(), {
+          path: '/plain%20metadata?view=source',
+        });
+        assert.deepEqual(calls[1], {
+          target: 'https://registry.npmjs.org/plain%20metadata?view=source',
+          redirect: 'error',
+        });
+        const count = calls.length;
+        const invalid = await nativeFetch(
+          local.info.registry + '/not-an-origin'
+        );
+        await invalid.text();
+        assert.equal(invalid.status, 502);
+        assert.equal(calls.length, count);
+        return {
+          actualRedirectRejected: true,
+          redirectTargetRequests: followed,
+          literalOrigin: true,
+          encodedPathAndQueryPreserved: true,
+        };
+      } finally {
+        globalThis.fetch = nativeFetch;
+        for (const server of [local.server, upstream, target]) {
+          server.closeAllConnections();
+          await new Promise((resolve) => server.close(resolve));
+        }
+      }
+    }
+  );
   await check(
     'Literal composite input guards reject moving references and executable text',
     async () => {

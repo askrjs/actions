@@ -123,10 +123,14 @@ export async function createRegistry(root) {
       }
       const accept = request.headers.accept || '*/*';
       // npm's ordinary cache owns reuse; avoid retaining every platform tarball in server memory.
-      const upstream = await fetch(publicUrl, {
-        headers: { Accept: accept },
-        signal: AbortSignal.timeout(60000),
-      });
+      const upstream = await fetch(
+        'https://registry.npmjs.org' + publicUrl.pathname + publicUrl.search,
+        {
+          headers: { Accept: accept },
+          redirect: 'error',
+          signal: AbortSignal.timeout(60000),
+        }
+      );
       const result = {
         status: upstream.status,
         mime:
