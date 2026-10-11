@@ -1,0 +1,54 @@
+name: Proposed reviewed private caller process boundary
+description: External successor proposal; final request/application and native acceptance remain pending.
+inputs:
+  request-base64:
+    required: true
+    description: Literal reviewed per-command request bytes embedded in the caller YAML.
+  request-sha256:
+    required: true
+    description: Literal independently admitted request SHA256; null/prospective authority rejects.
+  setup-node:
+    required: false
+    default: 'false'
+    description: Explicit original setup placement; must be reviewed against the original workflow.
+runs:
+  using: composite
+  steps:
+    - name: Reject proxy aliases before the pinned setup action
+      shell: bash
+      env:
+        NODE_OPTIONS: ''
+        NODE_PATH: ''
+        BASH_ENV: ''
+        ENV: ''
+      run: |
+        while IFS= read -r key; do
+          case "$key" in
+            *[pP][rR][oO][xX][yY])
+              [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || { echo 'Invalid proxy environment key' >&2; exit 1; }
+              [[ -z "${!key}" ]] || { echo "Proxy environment rejected: $key" >&2; exit 1; }
+              ;;
+          esac
+        done < <(compgen -e)
+    - name: Original pinned Node setup when explicitly owned by this invocation
+      if: inputs.setup-node == 'true'
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+      env:
+        NODE_OPTIONS: ''
+        NODE_PATH: ''
+        HTTP_PROXY: ''
+        HTTPS_PROXY: ''
+        ALL_PROXY: ''
+      with:
+        node-version: '24.21.0'
+    - name: Invoke one explicit reviewed process with a private child environment
+      shell: bash
+      env:
+        NODE_OPTIONS: ''
+        NODE_PATH: ''
+        BASH_ENV: ''
+        ENV: ''
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+        BOUNDARY_REQUEST_BASE64: ${{ inputs.request-base64 }}
+        BOUNDARY_REQUEST_SHA256: ${{ inputs.request-sha256 }}
+      run: node "$GITHUB_ACTION_PATH/boundary.mjs"
