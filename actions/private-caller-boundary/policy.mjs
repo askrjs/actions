@@ -164,6 +164,11 @@ export function validateRequest(r) {
 export function selectMetadata(ambient, platform, mode = 'release') {
   const selected = Object.create(null);
   for (const key of METADATA) selected[key] = text(ambient[key], key);
+  const actionPaths = paths(platform);
+  assert.ok(actionPaths.isAbsolute(selected.GITHUB_ACTION_PATH), 'GITHUB_ACTION_PATH');
+  if (platform === 'win32') assert.match(selected.GITHUB_ACTION_PATH, /^[A-Z]:\\/);
+  else assert.ok(!selected.GITHUB_ACTION_PATH.startsWith('//'), 'GITHUB_ACTION_PATH');
+  selected.GITHUB_ACTION_PATH = actionPaths.resolve(selected.GITHUB_ACTION_PATH);
   for (const key of ['RUNNER_TEMP', 'GITHUB_WORKSPACE', 'GITHUB_ENV', 'GITHUB_PATH', 'GITHUB_ACTION_PATH']) absolute(selected[key], platform, key);
   const supported = ['askr', ...['auth','charts','cli','fetch','i18n','logos','lucide','monaco','node','orm','otel','schema','server','testing','themes','ui','vite'].map(x => 'askr-' + x), 'askr-examples', 'website', 'destroyer', 'js-framework-benchmark'];
   assert.ok(mode === 'fixture' ? selected.GITHUB_REPOSITORY === 'askrjs/actions' : mode === 'release' && supported.includes(selected.GITHUB_REPOSITORY.replace(/^askrjs\//, '')) && selected.GITHUB_REPOSITORY.startsWith('askrjs/'), 'fixture host is Actions only; release retains exact22');
