@@ -59,6 +59,9 @@ jobs:
       - name: Bootstrap the exact fixture npm CLI
         shell: bash
         run: npm install --prefix "$RUNNER_TEMP/askr-candidate-test-bootstrap" --ignore-scripts --no-audit --no-fund npm@12.0.1
+      - name: Exercise owned loopback native error boundaries
+        shell: bash
+        run: node --test tests/loopback-health.test.mjs
       - name: Exercise ordinary candidate installs and failure boundaries
         shell: bash
         env:
