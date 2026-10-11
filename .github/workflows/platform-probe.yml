@@ -1,4 +1,4 @@
-name: Nonpublishing Linux platform lock-seed
+name: Nonpublishing Linux platform measure
 on:
   pull_request:
     branches: [main]
@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: askrjs/actions
-          ref: e0dfd609353c6d1fc3ab03d5d7a850148610d9c8
+          ref: 0c3b3714471711c8c1023171c24591e6793e8d15
           path: request
           persist-credentials: false
       - name: Bounded source controls only
@@ -37,15 +37,15 @@ jobs:
         shell: bash
         run: >-
           python3 probe/release/0.5-platform/platform_probe.py
-          --stage lock-seed
+          --stage measure
           --config request/release/0.5-platform-request/config.json
-          --config-sha256 4eac7443695aff3dc6bba1a8259af59da4a191d5268e4f60df4e1ec7aa3d7bdb
+          --config-sha256 eef4ece502462d0d440c94bd71cab9c2ca5eb70e87078bec8143fb9b9d2804f3
           --bundle request/release/0.5-platform-request/bundle
       - name: Preserve raw platform/tool/lock/config evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: askr-050-platform-lock-seed-${{ github.run_id }}-${{ github.run_attempt }}
+          name: askr-050-platform-measure-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             ${{ runner.temp }}/askr-050-platform-probe/evidence/
             ${{ runner.temp }}/askr-050-platform-probe/npm-cache/_logs/
