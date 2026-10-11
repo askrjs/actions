@@ -1,0 +1,54 @@
+name: Nonpublishing Linux platform lock-seed
+on:
+  pull_request:
+    branches: [main]
+    paths: ["release/0.5-platform/**", "release/0.5-platform-request/**", ".github/workflows/platform-probe.yml"]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: askr-050-platform-measurement
+  cancel-in-progress: false
+jobs:
+  platform:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: askrjs/actions
+          ref: d5b8f3b299c785b0c7586fd16012ceb404bbb64f
+          path: probe
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: askrjs/actions
+          ref: 535a3e215caa53f6579944d701d7ec51b915f9f4
+          path: request
+          persist-credentials: false
+      - name: Bounded source controls only
+        shell: bash
+        run: python3 -B -m unittest discover -s probe/release/0.5-platform -p test_platform_probe.py -v
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 24.21.0
+          package-manager-cache: false
+      - name: One reviewed tooling-only measurement
+        shell: bash
+        run: >-
+          python3 probe/release/0.5-platform/platform_probe.py
+          --stage lock-seed
+          --config request/release/0.5-platform-request/config.json
+          --config-sha256 5f552befa823f10c3fdefa4bf9f5d95b16f5600a8d40f387ed3a964ea07debc5
+          --bundle request/release/0.5-platform-request/bundle
+      - name: Preserve raw platform/tool/lock/config evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: askr-050-platform-lock-seed-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/askr-050-platform-probe/evidence/
+            ${{ runner.temp }}/askr-050-platform-probe/npm-cache/_logs/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
