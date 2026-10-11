@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
+import { request } from 'node:http';
 import {
   appendFile,
   mkdir,
@@ -392,6 +393,106 @@ export async function exportEnvironment(registry, candidate) {
     `NPM_CONFIG_REGISTRY=${registry}\nnpm_config_@askrjs:registry=${registry}\nNPM_CONFIG_AUDIT=${candidate ? 'false' : 'true'}\n`
   );
 }
+// Only the job-owned registry health endpoint uses this core HTTP transport.
+// Public registry/package requests retain their existing fetch transport.
+function ownedHealthRequest(target, timeout, readJson) {
+  assert.equal(typeof target, 'string', 'invalid owned health URL');
+  const url = new URL(target);
+  assert.equal(target, url.href, 'owned health URL must be literal');
+  assert.ok(
+    url.port && Number.isSafeInteger(Number(url.port)) && Number(url.port) > 0
+  );
+  assert.equal(
+    url.href,
+    `http://127.0.0.1:${url.port}/__askr-health`,
+    'invalid owned health URL'
+  );
+  assert.ok(
+    Number.isSafeInteger(timeout) && timeout > 0,
+    'invalid owned health deadline'
+  );
+  return new Promise((resolve, reject) => {
+    let req,
+      res,
+      settled = false;
+    const deadline = Date.now() + timeout;
+    const timeoutError = () =>
+      Object.assign(new Error('owned health request deadline exceeded'), {
+        code: 'ETIMEDOUT',
+      });
+    const finish = (error, value) => {
+      if (settled) return;
+      if (!error && Date.now() >= deadline) error = timeoutError();
+      settled = true;
+      clearTimeout(timer);
+      res?.destroy();
+      req?.destroy();
+      error ? reject(error) : resolve(value);
+    };
+    const timer = setTimeout(() => finish(timeoutError()), timeout);
+    try {
+      req = request(
+        url,
+        { method: 'GET', agent: false, headers: { Connection: 'close' } },
+        (response) => {
+          res = response;
+          response.on('error', (error) => finish(error));
+          // Any received HTTP headers mean the listener still answers. Body or
+          // status validation here could falsely certify an owned process stopped.
+          if (!readJson) return finish(null, response.statusCode);
+          if (response.statusCode !== 200)
+            return finish(new Error('owned health status must be 200'));
+          const chunks = [];
+          let bytes = 0;
+          response.on('data', (chunk) => {
+            bytes += chunk.length;
+            if (bytes > 16 * 1024)
+              return finish(new Error('owned health body exceeds 16384 bytes'));
+            chunks.push(chunk);
+          });
+          response.on('aborted', () =>
+            finish(new Error('owned health body aborted'))
+          );
+          response.on('close', () => {
+            if (!response.complete)
+              finish(new Error('owned health body incomplete'));
+          });
+          response.on('end', () => {
+            try {
+              const value = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+              assert.ok(
+                value && typeof value === 'object' && !Array.isArray(value),
+                'owned health must be a JSON object'
+              );
+              assert.equal(
+                typeof value.id,
+                'string',
+                'owned health identity must be a string'
+              );
+              assert.ok(
+                value.id.length,
+                'owned health identity must not be empty'
+              );
+              finish(null, value);
+            } catch (error) {
+              finish(error);
+            }
+          });
+        }
+      );
+      req.on('error', (error) => finish(error));
+      req.end();
+    } catch (error) {
+      finish(error);
+    }
+  });
+}
+export async function registryHealth(target, timeout) {
+  return ownedHealthRequest(target, timeout, true);
+}
+export async function registryResponds(target, timeout) {
+  return ownedHealthRequest(target, timeout, false);
+}
 export async function startRegistry(root) {
   await mkdir(root, { recursive: true });
   try {
@@ -426,12 +527,9 @@ export async function startRegistry(root) {
         await readFile(join(root, 'server.json'), 'utf8')
       );
       assert.equal(info.pid, child.pid, 'stale registry process metadata');
-      const health = await fetch(info.registry + '__askr-health', {
-        headers: { Connection: 'close' },
-        signal: AbortSignal.timeout(1000),
-      });
+      const health = await registryHealth(info.registry + '__askr-health', 1000);
       assert.equal(
-        (await health.json()).id,
+        health.id,
         info.id,
         'registry readiness identity mismatch'
       );
@@ -467,19 +565,12 @@ export async function stopRegistry(root) {
       if (error.code === 'ESRCH') return;
       throw error;
     }
-    const health = await fetch(info.registry + '__askr-health', {
-      headers: { Connection: 'close' },
-      signal: AbortSignal.timeout(2000),
-    });
-    const actual = await health.json();
+    const actual = await registryHealth(info.registry + '__askr-health', 2000);
     assert.equal(actual.id, info.id, 'refuse to stop an unrelated process');
     process.kill(info.pid);
     for (let attempt = 0; attempt < 100; attempt++) {
       try {
-        await fetch(info.registry + '__askr-health', {
-          headers: { Connection: 'close' },
-          signal: AbortSignal.timeout(200),
-        });
+        await registryResponds(info.registry + '__askr-health', 200);
       } catch {
         await writeFile(
           join(root, 'cleanup.json'),

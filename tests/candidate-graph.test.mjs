@@ -24,6 +24,7 @@ import {
   portableLock,
   exportEnvironment,
   repositoryEntry,
+  registryResponds,
 } from '../actions/qualify-candidate-graph/qualify.mjs';
 
 const root = join(
@@ -1167,16 +1168,14 @@ try {
       );
       await assert.rejects(stopRegistry(assembly.root), /unrelated/);
       assert.equal(
-        (await fetch(assembly.registry + '__askr-health')).status,
+        await registryResponds(assembly.registry + '__askr-health', 1000),
         200
       );
       await writeFile(join(assembly.root, 'server.json'), JSON.stringify(info));
       await stopRegistry(assembly.root);
       await stopRegistry(assembly.root);
       await assert.rejects(
-        fetch(assembly.registry + '__askr-health', {
-          signal: AbortSignal.timeout(1000),
-        })
+        registryResponds(assembly.registry + '__askr-health', 1000)
       );
       const githubEnv = join(root, 'github-env');
       process.env.GITHUB_ENV = githubEnv;
@@ -1330,7 +1329,7 @@ try {
         command(process.execPath, [script], { env: baseEnv })
       );
       active.push(serverRoot);
-      assert.equal((await fetch(info.registry + '__askr-health')).status, 200);
+      assert.equal(await registryResponds(info.registry + '__askr-health', 1000), 200);
       const env = {
         ...baseEnv,
         PHASE: 'cleanup',
@@ -1348,9 +1347,7 @@ try {
         logFile: join(root, 'literal-cleanup-repeat.log'),
       });
       await assert.rejects(
-        fetch(info.registry + '__askr-health', {
-          signal: AbortSignal.timeout(1000),
-        })
+        registryResponds(info.registry + '__askr-health', 1000)
       );
       assert.ok(
         (await readFile(env.GITHUB_ENV, 'utf8')).includes(
@@ -1426,7 +1423,7 @@ try {
       const info = JSON.parse(
         await readFile(join(serverRoot, 'server.json'), 'utf8')
       );
-      assert.equal((await fetch(info.registry + '__askr-health')).status, 200);
+      assert.equal(await registryResponds(info.registry + '__askr-health', 1000), 200);
       assert.throws(
         () =>
           command(process.execPath, ['--input-type=module', '-'], {

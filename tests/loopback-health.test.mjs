@@ -238,3 +238,250 @@ test('Actual literal cleanup survives a child-local native QoS error boundary', 
     await cleanupOwned(serverRoot);
   }
 });
+
+// These direct controls are staged only with the conditional transport fix.
+// The tests-first causal controls above use only the existing helper exports.
+const { registryHealth, registryResponds, stopRegistry } = await import(
+  helper.href
+);
+const { createServer } = await import('node:http');
+
+async function boundedProbe(pending) {
+  let timer;
+  try {
+    return await Promise.race([
+      pending,
+      new Promise((_, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              Object.assign(
+                new Error('Probe did not settle within its test bound'),
+                { code: 'TEST_OBSERVATION_DEADLINE' }
+              )
+            ),
+          1000
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function withHealthServer(handler, control) {
+  const requests = [],
+    releases = [];
+  const server = createServer((req, res) => {
+    requests.push({
+      method: req.method,
+      path: req.url,
+      connection: req.headers.connection,
+      port: req.socket.remotePort,
+    });
+    const release = handler(req, res);
+    if (typeof release === 'function') releases.push(release);
+  });
+  try {
+    await new Promise((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(0, '127.0.0.1', () => {
+        server.off('error', reject);
+        resolve();
+      });
+    });
+    const registry = `http://127.0.0.1:${server.address().port}/`;
+    return await control(registry + '__askr-health', requests, registry);
+  } finally {
+    for (const release of releases) release();
+    server.closeAllConnections();
+    if (server.listening)
+      await boundedProbe(
+        new Promise((resolve, reject) =>
+          server.close((error) => (error ? reject(error) : resolve()))
+        )
+      );
+  }
+}
+
+test('Owned JSON uses a complete identity response and separate closed connections', async () => {
+  await withHealthServer(
+    (_, res) => res.end('{"id":"owned"}'),
+    async (url, requests) => {
+      assert.deepEqual(await registryHealth(url, 1000), { id: 'owned' });
+      assert.equal(await registryResponds(url, 200), 200);
+      assert.equal(requests.length, 2);
+      assert.ok(
+        requests.every(
+          (r) =>
+            r.method === 'GET' &&
+            r.path === '/__askr-health' &&
+            r.connection === 'close'
+        )
+      );
+      assert.notEqual(requests[0].port, requests[1].port);
+    }
+  );
+});
+
+for (const [label, status, body] of [
+  ['non-200 status', 500, '{"id":"owned"}'],
+  ['redirect', 302, '{"id":"owned"}'],
+  ['malformed JSON', 200, '{'],
+  ['null', 200, 'null'],
+  ['array', 200, '[]'],
+  ['primitive', 200, '"owned"'],
+  ['missing identity', 200, '{}'],
+  ['empty identity', 200, '{"id":""}'],
+  ['non-string identity', 200, '{"id":42}'],
+  ['oversized body', 200, JSON.stringify({ id: 'x'.repeat(16 * 1024) })],
+]) {
+  test('Owned JSON rejects ' + label, async () => {
+    await withHealthServer(
+      (_, res) => {
+        res.writeHead(status, {
+          Location: 'https://example.invalid/never-follow',
+        });
+        res.end(body);
+      },
+      async (url, requests) => {
+        await assert.rejects(
+          boundedProbe(registryHealth(url, 2000)),
+          (error) => {
+            assert.notEqual(error.code, 'TEST_OBSERVATION_DEADLINE');
+            return true;
+          }
+        );
+        assert.equal(requests.length, 1, 'Owned probes never follow redirects');
+      }
+    );
+  });
+}
+
+test('Owned JSON rejects a truncated complete-length body', async () => {
+  await withHealthServer(
+    (_, res) => {
+      res.writeHead(200, { 'Content-Length': '100' });
+      res.end('{"id":"owned"}');
+    },
+    async (url) => {
+      await assert.rejects(boundedProbe(registryHealth(url, 2000)), (error) => {
+        assert.notEqual(error.code, 'TEST_OBSERVATION_DEADLINE');
+        return true;
+      });
+    }
+  );
+});
+
+for (const trickle of [false, true]) {
+  test(
+    'Owned JSON enforces the absolute deadline for ' +
+      (trickle ? 'trickling' : 'stalled') +
+      ' bodies',
+    async () => {
+      await withHealthServer(
+        (_, res) => {
+          res.writeHead(200);
+          res.flushHeaders();
+          const timer = trickle
+            ? setInterval(() => res.write(' '), 5)
+            : undefined;
+          return () => clearInterval(timer);
+        },
+        async (url) => {
+          await assert.rejects(boundedProbe(registryHealth(url, 50)), {
+            code: 'ETIMEDOUT',
+          });
+        }
+      );
+    }
+  );
+}
+
+for (const [label, status, body] of [
+  ['500', 500, '{}'],
+  ['redirect', 302, '{}'],
+  ['malformed body', 200, '{'],
+  ['oversized body', 200, 'x'.repeat(20 * 1024)],
+  ['stalled body', 200, null],
+]) {
+  test('Shutdown headers remain alive for ' + label, async () => {
+    await withHealthServer(
+      (_, res) => {
+        res.writeHead(status, {
+          Location: 'https://example.invalid/never-follow',
+        });
+        res.flushHeaders();
+        if (body !== null) res.end(body);
+      },
+      async (url, requests) => {
+        assert.equal(await boundedProbe(registryResponds(url, 200)), status);
+        assert.equal(requests.length, 1);
+      }
+    );
+  });
+}
+
+test('Shutdown header deadline rejects a listener that never sends headers', async () => {
+  await withHealthServer(
+    () => {},
+    async (url) => {
+      await assert.rejects(boundedProbe(registryResponds(url, 50)), {
+        code: 'ETIMEDOUT',
+      });
+    }
+  );
+});
+
+test('Invalid owned targets cannot make any request', async () => {
+  await withHealthServer(
+    (_, res) => res.end('{"id":"owned"}'),
+    async (url, requests) => {
+      const port = new URL(url).port;
+      for (const target of [
+        `https://127.0.0.1:${port}/__askr-health`,
+        `http://localhost:${port}/__askr-health`,
+        `http://127.1:${port}/__askr-health`,
+        `http://user@127.0.0.1:${port}/__askr-health`,
+        url + '?x=1',
+        url + '#x',
+        url.replace('/__askr-health', '/other'),
+        'http://127.0.0.1/__askr-health',
+        'http://127.0.0.1:0/__askr-health',
+      ]) {
+        await assert.rejects(registryHealth(target, 1000));
+        await assert.rejects(registryResponds(target, 200));
+      }
+      assert.deepEqual(requests, []);
+    }
+  );
+});
+
+test('Wrong ownership identity rejects before any termination signal', async () => {
+  await withHealthServer(
+    (_, res) => res.end('{"id":"unrelated"}'),
+    async (_, __, registry) => {
+      const owner = join(root, 'wrong-identity');
+      await mkdir(owner);
+      await writeFile(
+        join(owner, 'server.json'),
+        JSON.stringify({ pid: process.pid, registry, id: 'owned' })
+      );
+      const original = process.kill,
+        signals = [];
+      process.kill = (pid, signal) => {
+        assert.equal(pid, process.pid);
+        signals.push(signal);
+        if (signal !== 0)
+          throw new Error('Test forbids terminating this process');
+        return original(pid, 0);
+      };
+      try {
+        await assert.rejects(stopRegistry(owner), /unrelated process/);
+      } finally {
+        process.kill = original;
+      }
+      assert.deepEqual(signals, [0]);
+    }
+  );
+});
