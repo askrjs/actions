@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "stage": "lock-seed",
+  "approvedForMeasurement": false,
+  "source": {
+    "repo": "askrjs/actions",
+    "commit": null,
+    "baseCommit": "f1d2022fafa05d09ad259c442c15758b5d5fff57",
+    "baseTree": "3c400f12d3d8cf30a4d4e76ca80fc593823d6005",
+    "scriptSha256": "5c0d49d415d718686b2455075124e31ece84bb358d17d69ea78546f43d0a0cc8"
+  },
+  "packageJson": {
+    "file": "package.json",
+    "sha256": "0d14fa30153f0b69d2c022b76ac2d4f62372dd0a9b5c0b3e3e688c0a8f459a71"
+  },
+  "independentReview": {
+    "file": "review.json",
+    "sha256": null
+  }
+}
