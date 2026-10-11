@@ -1,0 +1,18 @@
+{
+  "actualLinuxMeasurementExecuted": false,
+  "actualNpmBootstrapExecuted": false,
+  "baseCommit": "f1d2022fafa05d09ad259c442c15758b5d5fff57",
+  "baseTree": "3c400f12d3d8cf30a4d4e76ca80fc593823d6005",
+  "concreteLocalSourceReviewSha256": "5f44cb52b41ba75eda260ff0811f37b5146ff7ae88ea31488df50b98cbbe2247",
+  "localSourceBindingManifestSha256": "d40fc3c94d122e8bcb8e3a5228f8fe5dd9f576ce68b0f3d950559423b1cb2c4f",
+  "packageJsonSha256": "0d14fa30153f0b69d2c022b76ac2d4f62372dd0a9b5c0b3e3e688c0a8f459a71",
+  "releaseQualification": false,
+  "scriptSha256": "5c0d49d415d718686b2455075124e31ece84bb358d17d69ea78546f43d0a0cc8",
+  "separateConcreteRequestAndWorkflowApprovalRequired": true,
+  "sourceCommit": "d5b8f3b299c785b0c7586fd16012ceb404bbb64f",
+  "sourceProposalReviewSha256": "f3c1c9e41be3b6c6f2f01a4e465142a0212327e60deda1438903734be0399c4d",
+  "sourceRepo": "askrjs/actions",
+  "sourceTree": "41d13d7367b371e794ae1fd4cdf3eb27c08456ef",
+  "stage": "lock-seed",
+  "status": "APPROVED_PLATFORM_MEASUREMENT_SOURCE_ONLY"
+}

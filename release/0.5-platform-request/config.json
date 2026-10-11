@@ -1,0 +1,20 @@
+{
+  "approvedForMeasurement": true,
+  "independentReview": {
+    "file": "review.json",
+    "sha256": "a716a185fb9dd7514b2859245c0723f6ce8d5052c1032d6440f1dcc6995331a0"
+  },
+  "packageJson": {
+    "file": "package.json",
+    "sha256": "0d14fa30153f0b69d2c022b76ac2d4f62372dd0a9b5c0b3e3e688c0a8f459a71"
+  },
+  "schemaVersion": 1,
+  "source": {
+    "baseCommit": "f1d2022fafa05d09ad259c442c15758b5d5fff57",
+    "baseTree": "3c400f12d3d8cf30a4d4e76ca80fc593823d6005",
+    "commit": "d5b8f3b299c785b0c7586fd16012ceb404bbb64f",
+    "repo": "askrjs/actions",
+    "scriptSha256": "5c0d49d415d718686b2455075124e31ece84bb358d17d69ea78546f43d0a0cc8"
+  },
+  "stage": "lock-seed"
+}
