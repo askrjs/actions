@@ -5,7 +5,7 @@ import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const helper = new URL(
   '../actions/qualify-candidate-graph/qualify.mjs',
@@ -125,7 +125,8 @@ async function cleanupOwned(serverRoot) {
       await observedHealth(info.registry, false);
     } catch (error) {
       if (error.code === 'ECONNREFUSED') return;
-      throw error;
+      // Only after exact ownership and SIGTERM, a reset is still inconclusive.
+      if (error.code !== 'ECONNRESET') throw error;
     }
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
@@ -172,7 +173,7 @@ test('Actual registry startup survives a child-local native QoS error boundary',
   try {
     result = await runChild('fault-startup', [
       '--import',
-      fault,
+      pathToFileURL(fault).href,
       '--input-type=module',
       '-e',
       starter(serverRoot),
@@ -216,7 +217,7 @@ test('Actual literal cleanup survives a child-local native QoS error boundary', 
     };
     result = await runChild(
       'fault-literal-cleanup',
-      ['--import', fault, fileURLToPath(helper)],
+      ['--import', pathToFileURL(fault).href, fileURLToPath(helper)],
       env
     );
     assert.match(result.stderr, /Owned child native QoS fault armed/);
