@@ -2,9 +2,60 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { REPOS, sha } from './qualify.mjs';
+
+function publicRegistryGet(publicUrl, accept) {
+  assert.equal(publicUrl.origin, 'https://registry.npmjs.org');
+  return new Promise((resolve, reject) => {
+    let upstream, response, settled = false;
+    const finish = (error, result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(deadline);
+      if (error) {
+        response?.destroy();
+        upstream?.destroy();
+        reject(error);
+      } else resolve(result);
+    };
+    const deadline = setTimeout(
+      () => finish(new Error('Public registry GET deadline exceeded')),
+      60000
+    );
+    try {
+      upstream = httpsRequest({
+        protocol: 'https:',
+        hostname: 'registry.npmjs.org',
+        port: 443,
+        method: 'GET',
+        path: publicUrl.pathname + publicUrl.search,
+        headers: { Accept: accept },
+      }, (incoming) => {
+        response = incoming;
+        incoming.on('error', finish);
+        incoming.on('aborted', () => finish(new Error('Public registry response aborted')));
+        if ([301, 302, 303, 307, 308].includes(incoming.statusCode))
+          return finish(new Error('Public registry redirects are rejected'));
+        const chunks = [];
+        incoming.on('data', (chunk) => { if (!settled) chunks.push(chunk); });
+        incoming.on('end', () => {
+          try {
+            finish(null, {
+              status: incoming.statusCode,
+              mime: incoming.headers['content-type'] || 'application/octet-stream',
+              bytes: Buffer.concat(chunks),
+            });
+          } catch (error) { finish(error); }
+        });
+      });
+      upstream.on('error', finish);
+      upstream.end();
+    } catch (error) { finish(error); }
+  });
+}
 
 export async function createRegistry(root) {
   const id = randomUUID();
@@ -123,20 +174,7 @@ export async function createRegistry(root) {
       }
       const accept = request.headers.accept || '*/*';
       // npm's ordinary cache owns reuse; avoid retaining every platform tarball in server memory.
-      const upstream = await fetch(
-        'https://registry.npmjs.org' + publicUrl.pathname + publicUrl.search,
-        {
-          headers: { Accept: accept },
-          redirect: 'error',
-          signal: AbortSignal.timeout(60000),
-        }
-      );
-      const result = {
-        status: upstream.status,
-        mime:
-          upstream.headers.get('content-type') || 'application/octet-stream',
-        bytes: Buffer.from(await upstream.arrayBuffer()),
-      };
+      const result = await publicRegistryGet(publicUrl, accept);
       return send(
         request,
         response,

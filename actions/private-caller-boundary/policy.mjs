@@ -6,7 +6,7 @@ import { posix, win32 } from 'node:path';
 export const HELPER_COMMIT = '3f26c662d728686e3fe18653d57e361dc987a9a6';
 export const HELPER_TREE = '161ee74d0c1ebf0e6e28f502b60e99b01ff8427c';
 export const HELPER_SHA = '202e5f8971ced93e63230a7cb57bf0ed364d1312d7094e18c81ad202ccbf2fd7';
-export const REGISTRY_SHA = '2afa68223e59cad2b1f36e6d530e56172268a8cccf2f04f5431b67f10a0aac28';
+export const REGISTRY_SHA = '749235e82913bce0286f059f9465d517824142fe67e536f46dd2b46ce05bc690';
 export const METADATA = Object.freeze([
   'RUNNER_TEMP', 'GITHUB_WORKSPACE', 'GITHUB_REPOSITORY', 'GITHUB_SHA',
   'GITHUB_ENV', 'GITHUB_PATH', 'GITHUB_ACTION_PATH',
