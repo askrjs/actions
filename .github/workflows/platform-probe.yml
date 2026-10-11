@@ -17,13 +17,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: askrjs/actions
-          ref: d5b8f3b299c785b0c7586fd16012ceb404bbb64f
+          ref: b87b1c951d161f572d1bf6fe14371aaa0ac40351
           path: probe
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: askrjs/actions
-          ref: 535a3e215caa53f6579944d701d7ec51b915f9f4
+          ref: e0dfd609353c6d1fc3ab03d5d7a850148610d9c8
           path: request
           persist-credentials: false
       - name: Bounded source controls only
@@ -39,7 +39,7 @@ jobs:
           python3 probe/release/0.5-platform/platform_probe.py
           --stage lock-seed
           --config request/release/0.5-platform-request/config.json
-          --config-sha256 5f552befa823f10c3fdefa4bf9f5d95b16f5600a8d40f387ed3a964ea07debc5
+          --config-sha256 4eac7443695aff3dc6bba1a8259af59da4a191d5268e4f60df4e1ec7aa3d7bdb
           --bundle request/release/0.5-platform-request/bundle
       - name: Preserve raw platform/tool/lock/config evidence
         if: always()
