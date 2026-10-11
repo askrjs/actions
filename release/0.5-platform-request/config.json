@@ -2,7 +2,7 @@
   "approvedForMeasurement": true,
   "independentReview": {
     "file": "review.json",
-    "sha256": "a716a185fb9dd7514b2859245c0723f6ce8d5052c1032d6440f1dcc6995331a0"
+    "sha256": "9ef834682c472807513dda34cf42d8c9fb2f3646d34d898bb9b6921bd6474ff9"
   },
   "packageJson": {
     "file": "package.json",
@@ -12,9 +12,9 @@
   "source": {
     "baseCommit": "f1d2022fafa05d09ad259c442c15758b5d5fff57",
     "baseTree": "3c400f12d3d8cf30a4d4e76ca80fc593823d6005",
-    "commit": "d5b8f3b299c785b0c7586fd16012ceb404bbb64f",
+    "commit": "b87b1c951d161f572d1bf6fe14371aaa0ac40351",
     "repo": "askrjs/actions",
-    "scriptSha256": "5c0d49d415d718686b2455075124e31ece84bb358d17d69ea78546f43d0a0cc8"
+    "scriptSha256": "d580533e7a4683ffd320dad3b416ef9d87911f46622873ad1f8e1d1dfe0f5ff6"
   },
   "stage": "lock-seed"
 }
