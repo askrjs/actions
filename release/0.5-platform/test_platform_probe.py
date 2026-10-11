@@ -1,10 +1,12 @@
 """Tiny synthetic source controls only; no platform/bootstrap execution."""
 import copy
 import base64
+from contextlib import contextmanager
 import json
 import os
 from pathlib import Path
 import subprocess
+import stat
 import tempfile
 import types
 import unittest
@@ -14,6 +16,45 @@ import workflow_proposal as w
 
 
 class Controls(unittest.TestCase):
+    @contextmanager
+    def os_fixture(self):
+        # Actual file/link/mode fixtures. Only root uid is simulated locally;
+        # this is not a hosted Linux measurement or privilege escalation.
+        root = self.root / "system"
+        for directory in [root, root / "etc", root / "usr", root / "usr/lib"]:
+            directory.mkdir(mode=0o755)
+        content = b'ID=ubuntu\nVERSION_ID="24.04"\n'
+        target = root / "usr/lib/os-release"
+        target.write_bytes(content)
+        target.chmod(0o644)
+        source = root / "etc/os-release"
+        source.symlink_to("../usr/lib/os-release")
+        original_lstat, original_stat, original_fstat = Path.lstat, Path.stat, os.fstat
+        uid_overrides = {}
+
+        def owner(info, uid):
+            return types.SimpleNamespace(**{name: getattr(info, name) for name in (
+                "st_dev", "st_ino", "st_mode", "st_gid", "st_size", "st_mtime_ns", "st_ctime_ns"
+            )}, st_uid=uid)
+
+        def lstat(path, *args, **kwargs):
+            info = original_lstat(path, *args, **kwargs)
+            path = Path(path)
+            return owner(info, uid_overrides.get(path, 0)) if path == root or root in path.parents else info
+
+        def fstat(fd):
+            return owner(original_fstat(fd), uid_overrides.get(target, 0))
+
+        def file_stat(path, *args, **kwargs):
+            info = original_stat(path, *args, **kwargs)
+            if isinstance(path, int):
+                return info
+            path = Path(path)
+            return owner(info, uid_overrides.get(path, 0)) if path == root or root in path.parents else info
+
+        with patch.object(p, "OS_METADATA_ROOT", root), patch.object(Path, "lstat", lstat), patch.object(Path, "stat", file_stat), patch.object(p.os, "fstat", side_effect=fstat):
+            yield root, source, target, content, uid_overrides
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name).resolve()
@@ -170,6 +211,82 @@ class Controls(unittest.TestCase):
         for marker in ["workflow_dispatch", "id-token", "write", "GITHUB_TOKEN", "npm publish", "publish-package", "qualify-g2", "candidate-graph"]: self.assertNotIn(marker, text)
         for args in [(None, "2" * 40, "3" * 64, "lock-seed"), ("main", "2" * 40, "3" * 64, "measure"), ("1" * 40, "2" * 40, None, "measure"), ("1" * 40, "2" * 40, "3" * 64, "qualify")]:
             with self.assertRaises(ValueError): w.render(*args)
+
+    def test_os_release_real_link_causal_boundary_and_regular_input(self):
+        with self.os_fixture() as (_root, source, _target, content, _uids):
+            with self.assertRaisesRegex(ValueError, "regular nonlink input required"):
+                p.file_bytes(source)  # Exact old generic reader remains strict.
+            raw, record = p.os_release_metadata()
+            self.assertEqual(raw, content)
+            self.assertEqual(record, {"inputPath": "/etc/os-release", "inputKind": "symlink",
+                "inputUid": 0, "inputMode": oct(stat.S_IMODE(source.lstat().st_mode)), "linkTarget": "../usr/lib/os-release",
+                "canonicalPath": "/usr/lib/os-release", "targetUid": 0, "targetMode": "0o644",
+                "contentSha256": p.sha(content)})
+            source.unlink()
+            source.write_bytes(content)
+            source.chmod(0o644)
+            raw, direct = p.os_release_metadata()
+            self.assertEqual(raw, content)
+            self.assertEqual(direct["inputKind"], "regular")
+            self.assertIsNone(direct["linkTarget"])
+            self.assertEqual(direct["canonicalPath"], "/etc/os-release")
+            self.assertEqual(p.file_bytes(source), content)
+
+    def test_os_release_rejects_other_targets_chains_and_nonregular_files(self):
+        with self.os_fixture() as (root, source, target, _content, _uids):
+            for link in ["../usr/lib/other", "../usr/lib/../other/os-release", "/tmp/os-release"]:
+                source.unlink()
+                source.symlink_to(link)
+                with self.assertRaisesRegex(ValueError, "only canonical"):
+                    p.os_release_metadata()
+            source.unlink()
+            source.symlink_to("../usr/lib/os-release")
+            target.unlink()
+            target.symlink_to("other")
+            with self.assertRaisesRegex(ValueError, "root-owned regular OS file"):
+                p.os_release_metadata()
+            target.unlink()
+            target.mkdir()
+            with self.assertRaisesRegex(ValueError, "root-owned regular OS file"):
+                p.os_release_metadata()
+            target.rmdir()
+            os.mkfifo(target)
+            with patch.object(p.os, "open") as opened:
+                with self.assertRaisesRegex(ValueError, "root-owned regular OS file"):
+                    p.os_release_metadata()
+                opened.assert_not_called()
+
+    def test_os_release_root_ownership_and_unprivileged_write_guards(self):
+        with self.os_fixture() as (root, source, target, _content, uids):
+            for path in [root, root / "etc", root / "usr", root / "usr/lib", source, target]:
+                uids[path] = 501
+                with self.assertRaisesRegex(ValueError, "root-owned"):
+                    p.os_release_metadata()
+                uids.clear()
+            for path, mode in [(target, 0o664), (target, 0o646), (root / "usr/lib", 0o775), (root / "etc", 0o757)]:
+                previous = stat.S_IMODE(path.stat().st_mode)
+                path.chmod(mode)
+                with self.assertRaisesRegex(ValueError, "without unprivileged writes"):
+                    p.os_release_metadata()
+                path.chmod(previous)
+            raw, record = p.os_release_metadata()
+            self.assertEqual(record["targetMode"], "0o644")
+            self.assertNotIn("inode", record)
+            self.assertNotIn("mtime", record)
+            self.assertNotIn("ctime", record)
+
+    def test_os_release_bounds_and_nonlink_parent_guard(self):
+        with self.os_fixture() as (root, _source, target, _content, _uids):
+            target.write_bytes(b"x" * 65537)
+            with patch.object(p.os, "open") as opened:
+                with self.assertRaisesRegex(ValueError, "bounded OS release"):
+                    p.os_release_metadata()
+                opened.assert_not_called()
+            target.unlink()
+            (root / "usr/lib").rmdir()
+            (root / "usr/lib").symlink_to(root / "etc", target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, "nonlink OS directory"):
+                p.os_release_metadata()
 
 
 if __name__ == "__main__":

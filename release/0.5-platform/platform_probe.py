@@ -21,6 +21,7 @@ MIN_FREE = 8 * 1024**3
 PACKAGE = {"private": True, "dependencies": {"npm": "12.0.1"}}
 HEX40 = re.compile(r"[0-9a-f]{40}")
 HEX64 = re.compile(r"[0-9a-f]{64}")
+OS_METADATA_ROOT = Path("/")
 
 
 def need(value, message):
@@ -52,6 +53,65 @@ def file_bytes(path):
     path = ancestors(path)
     need(not path.is_symlink() and path.is_file(), "regular nonlink input required")
     return path.read_bytes()
+
+
+def os_release_metadata():
+    """Read only the fixed root-owned OS release file or canonical system link."""
+    root = OS_METADATA_ROOT
+    source = root / "etc/os-release"
+    canonical = root / "usr/lib/os-release"
+
+    def trusted_parents(path):
+        need(root.is_absolute() and not root.is_symlink(), "literal OS metadata root")
+        current = path.parent
+        while True:
+            info = current.lstat()
+            need(stat.S_ISDIR(info.st_mode) and info.st_uid == 0 and not info.st_mode & 0o022,
+                 "root-owned nonlink OS directory without unprivileged writes required")
+            if current == root:
+                break
+            need(root in current.parents, "OS metadata path escaped fixed root")
+            current = current.parent
+
+    def trusted_file(info):
+        need(stat.S_ISREG(info.st_mode) and info.st_uid == 0 and not info.st_mode & 0o022,
+             "root-owned regular OS file without unprivileged writes required")
+        need(info.st_size <= 65536, "bounded OS release metadata required")
+
+    def identity(info):
+        return (info.st_dev, info.st_ino, info.st_mode, info.st_uid, info.st_gid,
+                info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+
+    trusted_parents(source)
+    original = source.lstat()
+    need(original.st_uid == 0, "root-owned OS release input required")
+    link = None
+    if stat.S_ISLNK(original.st_mode):
+        link = os.readlink(source)
+        target = Path(os.path.normpath(str(source.parent / link)))
+        need(target == canonical, "only canonical /usr/lib/os-release link target permitted")
+    else:
+        trusted_file(original)
+        target = source
+    trusted_parents(target)
+    before = target.lstat()
+    trusted_file(before)  # A chained link, directory or FIFO never reaches open.
+    descriptor = os.open(target, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    with os.fdopen(descriptor, "rb") as stream:
+        opened = os.fstat(stream.fileno())
+        trusted_file(opened)
+        need(identity(opened) == identity(before), "OS metadata changed before open")
+        raw = stream.read(65537)
+        need(len(raw) <= 65536 and identity(os.fstat(stream.fileno())) == identity(opened),
+             "OS metadata changed or exceeded bound during read")
+    need(identity(target.lstat()) == identity(before) and identity(source.lstat()) == identity(original),
+         "OS release input changed during read")
+    return raw, {
+        "inputPath": "/etc/os-release", "inputKind": "symlink" if link is not None else "regular",
+        "inputUid": original.st_uid, "inputMode": oct(stat.S_IMODE(original.st_mode)),
+        "linkTarget": link, "canonicalPath": "/usr/lib/os-release" if link is not None else "/etc/os-release",
+        "targetUid": before.st_uid, "targetMode": oct(stat.S_IMODE(before.st_mode)), "contentSha256": sha(raw),
+    }
 
 
 def file_hash(path):
@@ -233,7 +293,10 @@ def run(args):
         env = clean_env(ANCHOR)
         (evidence / "private-config.json").write_bytes(encoded(env))
         image = {name: os.environ.get(name) for name in ["ImageOS", "ImageVersion", "RUNNER_OS", "RUNNER_ARCH", "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_SHA"]}
-        image.update({"platform": platform.platform(), "pythonFullVersion": sys.version, "osRelease": file_bytes(Path("/etc/os-release")).decode()})
+        os_release_raw, os_release_source = os_release_metadata()
+        (evidence / "os-release.json").write_bytes(encoded(os_release_source))
+        image.update({"platform": platform.platform(), "pythonFullVersion": sys.version,
+                      "osRelease": os_release_raw.decode(), "osReleaseSource": os_release_source})
         os_release = dict(line.split("=", 1) for line in image["osRelease"].splitlines() if "=" in line and not line.startswith("#"))
         need(os_release.get("ID", "").strip('"') == "ubuntu" and os_release.get("VERSION_ID", "").strip('"') == "24.04", "actual Ubuntu24.04 release")
         (evidence / "image.json").write_bytes(encoded(image))
