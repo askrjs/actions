@@ -1,7 +1,9 @@
 // Native process/normal-tool qualification fixtures; not release graph/advisory acceptance.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFile, access, mkdir, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { request as httpRequest } from 'node:http';
+import { readFile, access, mkdir, writeFile, open } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { worker,action,nativeRoot,context,request,run,observer,profile,put,hash,quote,guardDisk,prepareComposite } from './private-boundary-fixture.mjs';
@@ -87,7 +89,7 @@ if(process.argv.includes('--prepare-composite')) {
   assert.equal(await readFile(join(ctx.workspace,'hooks.log'),'utf8'),'preinstall\ninstall\npostinstall\nprepack\n');assert.equal(hash(await readFile(join(ctx.workspace,'package-lock.json'))),before);
   const receipt=await read(join(privateRoot(ctx,r),'receipts/normal-ci-pack.json'));assert.equal(Buffer.from(r.command.scriptBase64,'base64').toString(),body);assert.equal(receipt.env.NPM_CONFIG_AUDIT,'true');
  });
- test('literal H19 cleanup works after rejected bootstrap preflight without npm and stops exact owned server',async()=>{
+ test('literal H19 helper cleanup works after rejected bootstrap preflight without npm and stops exact owned server',async()=>{
   const ctx=await context('cleanup');ctx.metadata.RUNNER_TEMP=ctx.temp;
   const rejectedBootstrap=await request(ctx,'bootstrap-rejected',null,'bootstrap');
   rejectedBootstrap.tools.nodeSha256='0'.repeat(64);
@@ -97,7 +99,62 @@ if(process.argv.includes('--prepare-composite')) {
   const root=join(ctx.temp,'askr-0.5-candidate-'+r.manifest.sha256);
   let info;
   try {
-   info=await helper.startRegistry(root);ok(await run(ctx,r));
+   info=await helper.startRegistry(root);
+   const registry=new URL(info.registry);
+   assert.equal(info.registry,`http://127.0.0.1:${registry.port}/`);
+   const publicGet=(path,accept,cap)=>new Promise((resolve,reject)=>{
+    let req,res,settled=false;
+    const deadline=Date.now()+20000;
+    const finish=(error,value)=>{
+     if(settled)return;
+     if(!error&&Date.now()>=deadline)error=new Error('native public read deadline exceeded');
+     settled=true;clearTimeout(timer);res?.destroy();req?.destroy();
+     error?reject(error):resolve(value);
+    };
+    const timer=setTimeout(()=>finish(new Error('native public read deadline exceeded')),20000);
+    try {
+     req=httpRequest({hostname:'127.0.0.1',port:Number(registry.port),method:'GET',path,agent:false,headers:{Accept:accept}},incoming=>{
+      res=incoming;if(settled){res.destroy();return;}const chunks=[];let bytes=0;
+      incoming.on('error',error=>finish(error));
+      incoming.on('aborted',()=>finish(new Error('native public read aborted')));
+      incoming.on('close',()=>{if(!incoming.complete)finish(new Error('native public read incomplete'));});
+      incoming.on('data',chunk=>{
+       if(settled)return;
+       bytes+=chunk.length;
+       if(bytes>cap)return finish(new Error('native public read body cap exceeded'));
+       chunks.push(chunk);
+      });
+      incoming.on('end',()=>{if(!settled)finish(null,{status:incoming.statusCode,mime:incoming.headers['content-type'],bytes:Buffer.concat(chunks)});});
+     });
+     req.on('error',error=>finish(error));req.end();
+    } catch(error) { finish(error); }
+   });
+   const metadata=await publicGet('/is-number/7.0.0','application/json',64*1024);
+   assert.equal(metadata.status,200);assert.match(metadata.mime,/^application\/json(?:;|$)/i);
+   const text=metadata.bytes.toString('utf8');assert.ok(Buffer.from(text).equals(metadata.bytes));
+   const pkg=JSON.parse(text);assert.equal(pkg.name,'is-number');assert.equal(pkg.version,'7.0.0');
+   assert.equal(pkg.dist.tarball,'https://registry.npmjs.org/is-number/-/is-number-7.0.0.tgz');
+   assert.match(pkg.dist.integrity,/^sha512-[A-Za-z0-9+/]{86}==$/);
+   const tarball=await publicGet('/is-number/-/is-number-7.0.0.tgz','application/octet-stream',8*1024*1024);
+   assert.equal(tarball.status,200);assert.match(tarball.mime,/^application\/octet-stream(?:;|$)/i);
+   const sri='sha512-'+createHash('sha512').update(tarball.bytes).digest('base64');
+   assert.equal(sri,pkg.dist.integrity);
+   const log=await open(join(root,'requests.jsonl'),'r');
+   let rawLog;
+   try {
+    const size=(await log.stat()).size;
+    assert.ok(size>0&&size<=16*1024);
+    rawLog=Buffer.alloc(size);
+    const {bytesRead}=await log.read(rawLog,0,size,0);
+    assert.equal(bytesRead,size);assert.equal((await log.stat()).size,size);
+   } finally { await log.close(); }
+   const logText=rawLog.toString('utf8');assert.ok(Buffer.from(logText).equals(rawLog));
+   const paths=['/is-number/7.0.0','/is-number/-/is-number-7.0.0.tgz'];
+   const publicGets=logText.trim().split('\n').map(line=>JSON.parse(line)).filter(row=>paths.includes(row.path));
+   assert.deepEqual(publicGets,paths.map(path=>({method:'GET',path,status:200,kind:'public-get'})));
+   const descriptor=JSON.stringify({fixtureAuthorityOnly:true,releaseQualification:false,finalToolAuthorityApproved:false,registry:info.registry,ownedId:info.id,name:pkg.name,version:pkg.version,metadata:{path:'/is-number/7.0.0',status:metadata.status,mime:metadata.mime,bytes:metadata.bytes.length,sha256:hash(metadata.bytes)},tarball:{url:pkg.dist.tarball,path:'/is-number/-/is-number-7.0.0.tgz',status:tarball.status,mime:tarball.mime,bytes:tarball.bytes.length,sha256:hash(tarball.bytes),sha512:createHash('sha512').update(tarball.bytes).digest('hex'),integrity:sri},publicGetRequests:publicGets},null,2)+'\n';
+   assert.ok(Buffer.byteLength(descriptor)<=4096);await put(join(ctx.root,'public-registry-read.json'),descriptor);
+   ok(await run(ctx,r));
    const stopped=await read(join(root,'cleanup.json'));assert.equal(stopped.stopped,true);assert.equal(stopped.pid,info.pid);assert.equal(stopped.id,info.id);
    await assert.rejects(helper.registryResponds(info.registry+'__askr-health',2000));
    await absent(join(ctx.temp,'askr-candidate-toolchain'));

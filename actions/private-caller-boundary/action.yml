@@ -48,6 +48,7 @@ runs:
         NODE_PATH: ''
         BASH_ENV: ''
         ENV: ''
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
         BOUNDARY_REQUEST_BASE64: ${{ inputs.request-base64 }}
         BOUNDARY_REQUEST_SHA256: ${{ inputs.request-sha256 }}
       run: node "$GITHUB_ACTION_PATH/boundary.mjs"
