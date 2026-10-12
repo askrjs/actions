@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "release": "0.5.0",
+  "complete": true,
+  "toolchain": {
+    "node": "24.21.0",
+    "npm": "12.0.1"
+  },
+  "packages": [
+    {
+      "name": "@askrjs/askr",
+      "repo": "askrjs/askr",
+      "commit": "20afdef717fda056cec61ba076682cc5b2c2f782",
+      "tree": "be0d1221519c963fceea448efece646f0f883c42",
+      "packageJsonSha256": "3e75649fb9f4bb3e90d13efaca05d895187833b050f5586ab6355f66229889c7",
+      "lockSha256": "d4afdc7f5728a29228ffde6886b224e169405c8c71d1508b46b41a2ef532c7f6",
+      "archiveSha512": "9f4170921881636a94a6d79cc008a93e241bf977228402fd50cbb04f698fee3c32fa88f1e113c9343bc68510fd2d09b0127e6d146a43bec704e340c3e9966309"
+    },
+    {
+      "name": "@askrjs/auth",
+      "repo": "askrjs/askr-auth",
+      "commit": "f1a0463e62614434a51abff22e58da54ba0af0d4",
+      "tree": "3610863e7ec482fc67ddcc694a8abb930155f634",
+      "packageJsonSha256": "3c7b8ca5cde7555cbc31e45ffcdf8b496782517425cf88105579a4fc0f47403f",
+      "lockSha256": "32c9dd45cda7500064cda199d11667b9c73d0a506746dc3d05cc6258d6feb9e4",
+      "archiveSha512": "69e17f597b6a9b599fbb06abd3ea24767599d61e801443938b830c5cd04f20ce8f41a861a00a105fc8055596fd61853d243f0e1f6bb4daa39adbbfda40c53e5b"
+    },
+    {
+      "name": "@askrjs/charts",
+      "repo": "askrjs/askr-charts",
+      "commit": "9b0473ea31b233e80e8889250502297ea739faad",
+      "tree": "22497c54cf53c8f4dd98476ae575e8ab78895e81",
+      "packageJsonSha256": "145e9116c96f79c840246579a4458c756b5f52e288308273a7d97e914a2873da",
+      "lockSha256": "6fa5a753d1840132924c472e52b6705a31cea43f510b48b89fdd429b42429781",
+      "archiveSha512": "04223125f723abcfe6bbf0b1b2779ad019e0078d11d58496d0316c9e4720beef96c289fd03295e21c57bb379cb42aaff1df47fdf595405576c16619ca14f6b8a"
+    },
+    {
+      "name": "@askrjs/cli",
+      "repo": "askrjs/askr-cli",
+      "commit": "556ca581221e342b809d4aa8ec7768a66e16cf1e",
+      "tree": "6128cdaecc1b200ee41aea2d5141f06a081be89e",
+      "packageJsonSha256": "0abdafe5408ca0dfefab80fbfcdde5fe310db1acdab7025731ff411b1fd23bda",
+      "lockSha256": "8c420570efd295e036ccd082058b769695ed42da8fc01930d49b45aa73bda3be",
+      "archiveSha512": "6df481edda94b48d185bf485d181616ef19540071234aa240555620626681e851456c2dcef3ce4ed18965ed6eebc37c0eb5c294afac3334122f536312f5580c2"
+    },
+    {
+      "name": "@askrjs/fetch",
+      "repo": "askrjs/askr-fetch",
+      "commit": "5dcce6c708651759be903b3220ea178651b9526c",
+      "tree": "c1c0de7134f8b59538f8c7048c6523bd0f331944",
+      "packageJsonSha256": "5cceb8c4ceb1040476f861d852601a1da857c362ad711e3c3af7765b0defeff0",
+      "lockSha256": "3949a660fe546b205e968daec35b4df686f17e899772c216a6dd2283b23654cb",
+      "archiveSha512": "76d7adc66d6f39bc616ef5174cc32f41fabf7889454566b801e3f8675bfba8f70279af83704621bca898404ce2ace2f5bf119842be3ba4cc8918ee802fbea148"
+    },
+    {
+      "name": "@askrjs/i18n",
+      "repo": "askrjs/askr-i18n",
+      "commit": "c2a7f4d54298674cce93372e02341380dc1511fb",
+      "tree": "798795c61ce5f7de9f058a78b0c5fb061465e68d",
+      "packageJsonSha256": "a277a4f1dce75d9751df4edb8d7258116aaa26bb098f3fd661c5fc2a5e8f30f5",
+      "lockSha256": "4ff8d80ed1d6e5cea1260bcdf68dee9d2fa5d7e0e6de693e58a9800545125c99",
+      "archiveSha512": "0cdeb37f43a4d7304b146826dc4637e5b213b0ea40df9aa9196bd8ec734b02ac3fa8b8c19f68a3bca1016a585cf7e16f9b0ef68708e02ff77675ffa15a525829"
+    },
+    {
+      "name": "@askrjs/logos",
+      "repo": "askrjs/askr-logos",
+      "commit": "5dade0f3361f69e6fc7895e738f456102fd9269d",
+      "tree": "4943c3ea19d3cd32631f71dd761e87487f36b44e",
+      "packageJsonSha256": "1c927c720fc44930ae685bf443be09ed7e65eb14f91097a0140eb8c6f11d54ff",
+      "lockSha256": "91efedfbe1b793965a5fb4c155b210082ef297f98d07c2fad6febc1de2341f02",
+      "archiveSha512": "2a8dc27f5dbeab07e8171d50803a0400d3ed14420bc867d2b00d7f9b0283f008d35c7de7e7c707d1b5c1bf8b3a16f7c51f8e8548873dc733abd1e4c2d98b8b93"
+    },
+    {
+      "name": "@askrjs/lucide",
+      "repo": "askrjs/askr-lucide",
+      "commit": "11dbe9b06e42ee67e2ba872a16e03b27fc2fa702",
+      "tree": "0cc4540bad3c1af0fc6e0e3e688541c6ef796877",
+      "packageJsonSha256": "47b68eb1a6f9496528611ceebbccf0e4a65059b246f9340fab590715fde33256",
+      "lockSha256": "df810f54cd1aa05e805b72dfa17ee434921e3973e9a605e12aa1120a2e2c7370",
+      "archiveSha512": "1ac98b573d264d603b8508cafc3dc58ee619e528c088a797fcecc06e2bd5227dbeae19f6ccacfdef9087b6907eabc909a927c395ed4dd469980120e2df055702"
+    },
+    {
+      "name": "@askrjs/monaco",
+      "repo": "askrjs/askr-monaco",
+      "commit": "e43f12b6f4c446c6636a41ee3b02699782bb7363",
+      "tree": "53c44fad6393224032b6f369f02de323d068d7b6",
+      "packageJsonSha256": "06e72522ac2345459e765542c757b50a27c2ba5b4a1c3324c8a88840a6c9823d",
+      "lockSha256": "a6af22f9c7e61aae929e660682b1b7b371fd8fc294ac9e203b8bbce01ea51c53",
+      "archiveSha512": "a0a02d9afbd2e59741f95e01fd0b75bf4efcd5fb52d592cf53612b40d65d695152a31ee55c56b1d626589c0db2bee5e50133ed6b1e377cb68bc2dd1698f88105"
+    },
+    {
+      "name": "@askrjs/node",
+      "repo": "askrjs/askr-node",
+      "commit": "1855c07e8e2212c9dc0705462433a03e2d51df13",
+      "tree": "6899912b09dfc3ce5f2322764d5fcd1f6a5c63eb",
+      "packageJsonSha256": "9c7e77da166c978dfb2c47e24ee7075ed195ea90a78af7063d1940dce53edfab",
+      "lockSha256": "13ce8b523e9fde914a3ca740ab1c35647f80c2e9f525a6dce1074c855f1c986d",
+      "archiveSha512": "a11a6d6d5836d60f6c4840af544d68f90e759574c90edf934ec903580aa949b3881b10e1f4df26076540379e615013c7a2d8711df6971dc6b19e92b65790d40e"
+    },
+    {
+      "name": "@askrjs/orm",
+      "repo": "askrjs/askr-orm",
+      "commit": "818b013da4adf451f34a438026da18bb2f603026",
+      "tree": "29057f37ef770b46b65c0705b17d682c407d5f06",
+      "packageJsonSha256": "fffc142101f1766ffdf604a4dec8a46d194390e3812b1cfd250b4d5dd0c1e938",
+      "lockSha256": "514bdbe48517aa63601ed561c9fdb7c372f4d848968c1c2f960f9bde63d6eaae",
+      "archiveSha512": "3a05ede2e32fe49b009f84799882680a4f60cdb44abdf225297f97685d6e4b669be776cfb1b987560fa4099aed1a148d03787cc97175ecdf8e7dc23ad36c2b89"
+    },
+    {
+      "name": "@askrjs/otel",
+      "repo": "askrjs/askr-otel",
+      "commit": "2a75e8fa83e913fa116779caf5e416312662a6bc",
+      "tree": "5ff91ef54badbe1edb33d3dab301183e230af039",
+      "packageJsonSha256": "e2f4d032edd6fc8b4d53ec1232c49271f80fcbda8c3b619876049427b2960c49",
+      "lockSha256": "e40e7b75da6b87e7d4e939305a3ef21f620df6adcd14070923f3bdfd7855e4ed",
+      "archiveSha512": "b6bb7c4a3b222dc25210fa3c9a35b4407754ebc47e83b6f9b2470e630e668136e87d3add7c1c9cdc8ffa0b4e15e073c27c8255281908e630071b7f5cd88ed2a0"
+    },
+    {
+      "name": "@askrjs/schema",
+      "repo": "askrjs/askr-schema",
+      "commit": "374cd26695e7358303b23bc384a4d1a120bdc0ca",
+      "tree": "f9b92bfa3a7b76e5ef7fbda998cabe5f699d53df",
+      "packageJsonSha256": "a5adb542d3b164c565eaad6b430bbd526ce720bf2c0fd3282f1d4988ad486718",
+      "lockSha256": "b1d0f58e39f0191ba9a1fc6cd44c679b54892382df492dcdb0c455ad8c16a76a",
+      "archiveSha512": "66c56051fb67dfd51deed315b3b7ff0e12834df53ccd837f4026fbe461335d8b11d0fb34a9d67e1c1c71f2781e2004c312bd585324900c1e6f70d7537c5d2e5e"
+    },
+    {
+      "name": "@askrjs/server",
+      "repo": "askrjs/askr-server",
+      "commit": "9007a271243046ea8239c399f088c618877cabac",
+      "tree": "412c7a18154e1c03584ac444f16a21aafb57befc",
+      "packageJsonSha256": "d2d4bc6ac4bb0f788aac5588bb64f536c5062982acc0fce37f86535290bb649e",
+      "lockSha256": "0638ffcdc0f1868ca083c6ee52493bf2d862a32cc760361a5a0bb762301c5567",
+      "archiveSha512": "a620f9e3a8639501250ecfbb7cd6d308113ce6a767a594672e670e500a1a948d65ee1ebe125a69d3ffa791f5558a6d8132736cf024ea5b4d42c29c6ffe1bfda4"
+    },
+    {
+      "name": "@askrjs/testing",
+      "repo": "askrjs/askr-testing",
+      "commit": "c164674d3c47a430913fe9a3e0eb5d868fed2de0",
+      "tree": "00fcd4c4bbe439020f8526964e4e58d83c24312b",
+      "packageJsonSha256": "e2e60db4553aacc5b71bf5f04fbb03cb90253d21f922f02ca5f3fb60a16dfe82",
+      "lockSha256": "b112f0113a324aa7911bd9999125ee340537e20d3ea4e602746f8512faaeacb6",
+      "archiveSha512": "977658a514650655be439ad30d8b1a6aecd317b9c8b9707ae7ddf73b1bcb9048731889d5d29cf48da7f1d0cc8cc577cfdd52e52769337714382a9fc398081f23"
+    },
+    {
+      "name": "@askrjs/themes",
+      "repo": "askrjs/askr-themes",
+      "commit": "2ad3374808cf310f444a69c302e6fafc76d25ae5",
+      "tree": "8ebc68d734f507c1b0b2581380273c7801b82df9",
+      "packageJsonSha256": "368307e10e5b55846e9b802612d036aea3efaf31fb8f726a47616ef931c989cd",
+      "lockSha256": "6743390798e886d5a875ce45b3cff3fe8c2240db6fd93fd501047cf132b7b0a2",
+      "archiveSha512": "37b65d019b7874f8ab01a46805830c56112e9c153cd4511d145f6a3a5877968aeb673c87e276780ede84e6ba66195f505d22c67944ec3637a89a5199aebcf5b1"
+    },
+    {
+      "name": "@askrjs/ui",
+      "repo": "askrjs/askr-ui",
+      "commit": "35968646f01e2400f10cf199452b5da91c153c49",
+      "tree": "d2151bbb2f80fcc75bdba937ab8b5683d78b5d67",
+      "packageJsonSha256": "6d7c324d7ad8cbd57008625b20b027ed6850910c333d71f4a14a52d5b7c612cb",
+      "lockSha256": "fbea7a649e9083c5af417bc65ff50c6c61811449d754fb8dbf8339c307ce06e3",
+      "archiveSha512": "f3000461b971c1e7cac11b9f3d96096e16c37fe112320e0bf28350b6d7319bfd39025a7bdb391464083baf58d018d712a5ddeff5dc0991eca4163f39baaf6aa6"
+    },
+    {
+      "name": "@askrjs/vite",
+      "repo": "askrjs/askr-vite",
+      "commit": "d3ff7d2b810f14388021098d4df2b7d123071c50",
+      "tree": "b075eb7b12c7ae2e30993e96cb3e9e3c6cab6195",
+      "packageJsonSha256": "0ac8eec14c7dc1f72d8757b59b928515c89ea900a51a499c266edec8982d9ea5",
+      "lockSha256": "1ff01825d89805bf785c8ba39c144e8d74f82ec488e776bea212e48108a9f163",
+      "archiveSha512": "66c2b189b9607ff995879ba3026f382fe342bd8d89d6eee88dbec264e3f0cd1aa714b94fed48f5eb4337af19f29eb2c3fed31cf95ca1131c736a2ce4a2d5802b"
+    }
+  ]
+}
