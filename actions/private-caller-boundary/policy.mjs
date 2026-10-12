@@ -10,6 +10,7 @@ export const REGISTRY_SHA = '749235e82913bce0286f059f9465d517824142fe67e536f46dd
 export const METADATA = Object.freeze([
   'RUNNER_TEMP', 'GITHUB_WORKSPACE', 'GITHUB_REPOSITORY', 'GITHUB_SHA',
   'GITHUB_ENV', 'GITHUB_PATH', 'GITHUB_ACTION_PATH',
+  'RUNNER_OS', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'BOUNDARY_REQUESTED_HEAD',
 ]);
 export const digest = (raw) => createHash('sha256').update(raw).digest('hex');
 const HASH = /^[a-f0-9]{64}$/;
@@ -173,6 +174,9 @@ export function selectMetadata(ambient, platform, mode = 'release') {
   const supported = ['askr', ...['auth','charts','cli','fetch','i18n','logos','lucide','monaco','node','orm','otel','schema','server','testing','themes','ui','vite'].map(x => 'askr-' + x), 'askr-examples', 'website', 'destroyer', 'js-framework-benchmark'];
   assert.ok(mode === 'fixture' ? selected.GITHUB_REPOSITORY === 'askrjs/actions' : mode === 'release' && supported.includes(selected.GITHUB_REPOSITORY.replace(/^askrjs\//, '')) && selected.GITHUB_REPOSITORY.startsWith('askrjs/'), 'fixture host is Actions only; release retains exact22');
   assert.match(selected.GITHUB_SHA, SHA);
+  assert.equal(selected.RUNNER_OS, { linux: 'Linux', darwin: 'macOS', win32: 'Windows' }[platform], 'actual runner OS');
+  for (const key of ['GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']) assert.match(selected[key], /^[1-9][0-9]{0,19}$/, key);
+  assert.match(selected.BOUNDARY_REQUESTED_HEAD, SHA, 'actual event requested head');
   return selected;
 }
 export function registryChoice(mode, server) {

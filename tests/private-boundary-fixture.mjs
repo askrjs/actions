@@ -20,7 +20,7 @@ export async function context(name) {
   const root=await dir(join(nativeRoot,'contexts',name));
   const workspace=await dir(join(root,'workspace')), temp=await dir(join(root,'temp'));
   await put(join(temp,'github-env'),'');await put(join(temp,'github-path'),'');
-  return {root,workspace,temp,metadata:{RUNNER_TEMP:await realpath(process.env.RUNNER_TEMP),GITHUB_WORKSPACE:workspace,GITHUB_REPOSITORY:'askrjs/actions',GITHUB_SHA:process.env.GITHUB_SHA,GITHUB_ENV:join(temp,'github-env'),GITHUB_PATH:join(temp,'github-path'),GITHUB_ACTION_PATH:await realpath(action)}};
+  return {root,workspace,temp,metadata:{RUNNER_TEMP:await realpath(process.env.RUNNER_TEMP),GITHUB_WORKSPACE:workspace,GITHUB_REPOSITORY:'askrjs/actions',GITHUB_SHA:process.env.GITHUB_SHA,GITHUB_ENV:join(temp,'github-env'),GITHUB_PATH:join(temp,'github-path'),GITHUB_ACTION_PATH:await realpath(action),RUNNER_OS:process.env.RUNNER_OS,GITHUB_RUN_ID:process.env.GITHUB_RUN_ID,GITHUB_RUN_ATTEMPT:process.env.GITHUB_RUN_ATTEMPT,BOUNDARY_REQUESTED_HEAD:process.env.GITHUB_SHA}};
 }
 export async function profile() { return JSON.parse(await readFile(join(nativeRoot,'profile.json'),'utf8')); }
 export async function configs(workspace) {
