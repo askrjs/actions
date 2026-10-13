@@ -19,6 +19,14 @@ jobs:
       contents: read
       packages: read
     steps:
+      - name: Require main release branch
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" != 'refs/heads/main' ]]; then
+            echo "Package publication must run from refs/heads/main; got $GITHUB_REF." >&2
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
