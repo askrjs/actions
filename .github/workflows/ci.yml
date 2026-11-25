@@ -17,10 +17,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
 
       - name: Setup Node
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: 'lts/*'
       - name: Reject action input shell interpolation
@@ -45,7 +45,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: Checkout repository with literal source line endings
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         env:
           GIT_CONFIG_COUNT: '2'
           GIT_CONFIG_KEY_0: core.autocrlf
@@ -119,7 +119,7 @@ jobs:
           JS
       - name: Preserve candidate fixture receipts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: candidate-helper-${{ matrix.os }}
           path: |

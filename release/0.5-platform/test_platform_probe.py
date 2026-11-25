@@ -78,7 +78,7 @@ class Controls(unittest.TestCase):
         return p.validate_config(self.config, self.root, self.config["stage"], self.script)
 
     def lock(self):
-        return {"lockfileVersion": 3, "packages": {"": {"dependencies": {"npm": "12.0.1"}}, "node_modules/npm": {"version": "12.0.1", "resolved": "https://registry.npmjs.org/npm/-/npm-12.0.1.tgz", "integrity": "sha512-" + base64.b64encode(b"a" * 64).decode()}}}
+        return {"lockfileVersion": 3, "packages": {"": {"dependencies": {"npm": "12.2.3"}}, "node_modules/npm": {"version": "12.2.3", "resolved": "https://registry.npmjs.org/npm/-/npm-12.2.3.tgz", "integrity": "sha512-" + base64.b64encode(b"a" * 64).decode()}}}
 
     def test_seed_source_accepts_and_rejects_missing_authority(self):
         self.assertEqual(self.validate(), self.package)
@@ -94,7 +94,7 @@ class Controls(unittest.TestCase):
             self.config["source"][field] = original
 
     def test_assets_review_and_no_application_dependency(self):
-        for bad in [dict(p.PACKAGE, scripts={"postinstall": "node app.js"}), {"private": True, "dependencies": {"npm": "latest"}}, {"private": True, "dependencies": {"npm": "12.0.1", "@askrjs/auth": "0.5.0"}}]:
+        for bad in [dict(p.PACKAGE, scripts={"postinstall": "node app.js"}), {"private": True, "dependencies": {"npm": "latest"}}, {"private": True, "dependencies": {"npm": "12.2.3", "@askrjs/auth": "0.5.0"}}]:
             raw = p.encoded(bad)
             (self.root / "package.json").write_bytes(raw)
             self.config["packageJson"]["sha256"] = p.sha(raw)
@@ -122,7 +122,7 @@ class Controls(unittest.TestCase):
 
     def test_lock_rejects_wrong_cohort_and_extra_owner(self):
         p.validate_lock(p.encoded(self.lock()))
-        for edit in [lambda x: x["packages"]["node_modules/npm"].update(version="12.0.2"), lambda x: x["packages"]["node_modules/npm"].update(resolved="https://foreign.test/npm.tgz"), lambda x: x["packages"].update({"node_modules/evil": {"version": "1"}}), lambda x: x["packages"][""].update(dependencies={"npm": "^12.0.1"}), lambda x: x["packages"]["node_modules/npm"].pop("integrity")]:
+        for edit in [lambda x: x["packages"]["node_modules/npm"].update(version="12.0.2"), lambda x: x["packages"]["node_modules/npm"].update(resolved="https://foreign.test/npm.tgz"), lambda x: x["packages"].update({"node_modules/evil": {"version": "1"}}), lambda x: x["packages"][""].update(dependencies={"npm": "^12.2.3"}), lambda x: x["packages"]["node_modules/npm"].pop("integrity")]:
             lock = self.lock()
             edit(lock)
             with self.assertRaises(ValueError): p.validate_lock(p.encoded(lock))

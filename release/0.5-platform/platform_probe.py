@@ -18,7 +18,7 @@ PARENT = Path("/home/runner/work/_temp")
 ANCHOR = PARENT / "askr-050-platform-probe"
 NODE = Path("/opt/hostedtoolcache/node/24.21.0/x64/bin/node")
 MIN_FREE = 8 * 1024**3
-PACKAGE = {"private": True, "dependencies": {"npm": "12.0.1"}}
+PACKAGE = {"private": True, "dependencies": {"npm": "12.2.3"}}
 HEX40 = re.compile(r"[0-9a-f]{40}")
 HEX64 = re.compile(r"[0-9a-f]{64}")
 OS_METADATA_ROOT = Path("/")
@@ -188,11 +188,11 @@ def validate_lock(raw):
     need(isinstance(lock, dict) and lock.get("lockfileVersion") == 3, "canonical npm lock v3")
     packages = lock.get("packages")
     need(isinstance(packages, dict) and "" in packages and "node_modules/npm" in packages, "npm root lock entries")
-    need(packages[""].get("dependencies") == {"npm": "12.0.1"}, "exact sole direct npm dependency")
+    need(packages[""].get("dependencies") == {"npm": "12.2.3"}, "exact sole direct npm dependency")
     need(all(name in ["", "node_modules/npm"] or name.startswith("node_modules/npm/node_modules/")
              for name in packages), "no non-npm tooling dependencies")
     npm = packages["node_modules/npm"]
-    need(npm.get("version") == "12.0.1" and npm.get("resolved") == "https://registry.npmjs.org/npm/-/npm-12.0.1.tgz" and
+    need(npm.get("version") == "12.2.3" and npm.get("resolved") == "https://registry.npmjs.org/npm/-/npm-12.2.3.tgz" and
          isinstance(npm.get("integrity"), str) and re.fullmatch(r"sha512-[A-Za-z0-9+/]+={0,2}", npm["integrity"]),
          "canonical npm12 archive identity")
     need(len(base64.b64decode(npm["integrity"][7:], validate=True)) == 64, "full SHA512 archive SRI")
@@ -344,14 +344,14 @@ def run(args):
             need(lock == asset(bundle, config["lock"]), "normal ci changed reviewed lock")
             installed_root = target / "node_modules/npm"
             installed_manifest = json.loads(file_bytes(installed_root / "package.json"))
-            need(installed_manifest["name"] == "npm" and installed_manifest["version"] == "12.0.1", "installed npm12 identity")
+            need(installed_manifest["name"] == "npm" and installed_manifest["version"] == "12.2.3", "installed npm12 identity")
             raw = encoded(projection(installed_root))
             (evidence / "installed-npm-runtime-projection.json").write_bytes(raw)
             receipt["installedRuntimeProjectionSha256"] = sha(raw)
             for name in ["npm", "npx"]:
                 cli = installed_root / ("bin/" + name + "-cli.js")
                 version = command([str(NODE), str(cli), "--version"], env, ANCHOR, evidence, "installed-" + name + "-version")
-                need(version.strip() == "12.0.1", "installed exact npm/npx12 version")
+                need(version.strip() == "12.2.3", "installed exact npm/npx12 version")
                 receipt[name + "Cli"] = {"file": str(cli), "sha256": file_hash(cli), "fullVersion": version}
             command([str(NODE), str(installed_root / "bin/npm-cli.js"), "config", "list", "--json"], env, target, evidence, "installed-npm-config")
         (evidence / "package-lock.json").write_bytes(lock)
