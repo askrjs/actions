@@ -33,7 +33,7 @@ fixtures contain deliberately synthetic refs and are not execution authority.
    Every command receives a constructed environment with private HOME, TMPDIR,
    npm configs/cache and gh config; no ambient token/config/bypass is copied.
    Scoped/unscoped registries both explicitly point at public npm.
-4. It runs only the literal tooling dependency `npm: 12.0.1` with normal
+4. It runs only the literal tooling dependency `npm: 12.2.3` with normal
    `npm install --package-lock-only --prefix <owned target>` using the bundled
    npm CLI under the pinned Node. The manifest has no scripts or other direct
    dependency. No installed dependency tree may exist afterward. Version/config
@@ -51,8 +51,8 @@ fixtures contain deliberately synthetic refs and are not execution authority.
    needs a new reviewed seed measurement. It then runs ordinary `npm ci` using
    bundled bootstrap npm against the exact reviewed npm-only lock, with normal
    lifecycle policy and no ignore-scripts/force/legacy-peer-deps/overrides.
-   It asserts the raw lock remains exact, installed name/version is npm12.0.1,
-   npm/npx version is exactly12.0.1, and records the installed full runtime
+   It asserts the raw lock remains exact, installed name/version is npm 12.2.3,
+   npm/npx version is exactly 12.2.3, and records the installed full runtime
    projection plus CLI hashes/config readback.
 7. Root/reviewer may separately admit the measured Linux platform/tool projection
    into a future hosted launcher input. That admission, public source/workflow
