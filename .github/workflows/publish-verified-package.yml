@@ -1,0 +1,148 @@
+name: Publish CI-verified Askr package
+
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  prepare:
+    name: Verify CI and prepare archive
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      digest: ${{ steps.archive.outputs.digest }}
+    steps:
+      - name: Require green main CI
+        uses: askrjs/actions/actions/require-main-ci@main
+        with:
+          token: ${{ github.token }}
+
+      - name: Checkout release commit
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 'lts/*'
+
+      - name: Validate Askr package contract
+        id: contract
+        uses: askrjs/actions/actions/validate-package-contract@main
+
+      - name: Compute release tag
+        id: version
+        uses: askrjs/actions/actions/compute-release-tag@main
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify changelog when required by the package
+        run: npm run changelog:check --if-present
+
+      - name: Build and pack release archive
+        id: archive
+        shell: bash
+        env:
+          PACKAGE_NAME: ${{ steps.contract.outputs.name }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          archive_directory=$(mktemp -d "$RUNNER_TEMP/askr-package.XXXXXX")
+          npm pkg set "gitHead=$GITHUB_SHA"
+          npm pack --pack-destination "$archive_directory"
+
+          shopt -s nullglob
+          archives=("$archive_directory"/*.tgz)
+          if [[ ${#archives[@]} != 1 ]]; then
+            echo "::error::Expected npm pack to generate exactly one archive."
+            exit 1
+          fi
+          archive="$archive_directory/package.tgz"
+          mv -- "${archives[0]}" "$archive"
+          tar -xOf "$archive" package/package.json |
+            jq -e --arg name "$PACKAGE_NAME" --arg version "$PACKAGE_VERSION" --arg commit "$GITHUB_SHA" \
+              '.name == $name and .version == $version and .gitHead == $commit and .private != true' > /dev/null
+          digest=$(sha256sum "$archive")
+          echo "digest=${digest%% *}" >> "$GITHUB_OUTPUT"
+          echo "path=$archive" >> "$GITHUB_OUTPUT"
+
+      - name: Verify packaged output
+        env:
+          ARCHIVE: ${{ steps.archive.outputs.path }}
+        run: |
+          npm run test:publint
+          if [[ "$GITHUB_REPOSITORY" == askrjs/askr-vite ]]; then
+            npm run pack:check -- "$ARCHIVE"
+          else
+            npm run pack:check
+          fi
+
+      - name: Upload verified archive
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: askr-release-package
+          path: ${{ steps.archive.outputs.path }}
+          if-no-files-found: error
+          overwrite: true
+
+  publish:
+    name: Tag and publish verified archive
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: npm
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v7.0.1
+
+      - name: Setup Node
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 'lts/*'
+
+      - name: Download verified archive
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: askr-release-package
+          path: ${{ runner.temp }}/askr-release
+
+      - name: Verify archive digest
+        shell: bash
+        env:
+          ARCHIVE_DIGEST: ${{ needs.prepare.outputs.digest }}
+        run: |
+          printf '%s  %s\n' "$ARCHIVE_DIGEST" "$RUNNER_TEMP/askr-release/package.tgz" | sha256sum --check
+
+      - name: Check release tag
+        id: tag_status
+        uses: askrjs/actions/actions/check-tag-exists@main
+        with:
+          tag: ${{ needs.prepare.outputs.tag }}
+
+      - name: Verify existing tag points to this commit
+        if: steps.tag_status.outputs.exists == 'true'
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          git fetch origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          test "$(git rev-list -n 1 "$RELEASE_TAG")" = "$GITHUB_SHA"
+
+      - name: Create release tag
+        if: steps.tag_status.outputs.exists != 'true'
+        uses: askrjs/actions/actions/create-tag@main
+        with:
+          tag: ${{ needs.prepare.outputs.tag }}
+
+      - name: Publish verified archive to npm
+        working-directory: ${{ runner.temp }}/askr-release
+        run: npm publish ./package.tgz --ignore-scripts --provenance --access public --registry=https://registry.npmjs.org

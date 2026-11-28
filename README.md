@@ -13,7 +13,7 @@ Reusable GitHub Actions for npm package repositories.
 - `actions/validate-package-contract` — enforce shared Askr package metadata and release commands
 - `actions/resolve-npm-tag` — map a semver tag to an npm dist-tag
 - `actions/qualify-candidate-graph` — reconstruct the reviewed 0.5.0 graph locally for ordinary prepublication CI
-- `.github/workflows/publish-package.yml` — verify, then tag and publish through the caller repository's `npm` environment
+- `.github/workflows/publish-verified-package.yml` — reuse successful main CI, then prepare, tag, and publish one verified archive
 
 ## Usage
 
@@ -24,7 +24,13 @@ runtime. The git/metadata actions are standalone. The release-specific candidate
 selects its reviewed Node/npm toolchain and owns a temporary GET-only loopback
 registry; its exact boundaries are documented below.
 
-The reusable publish workflow is called as a job after a repository's local CI workflow. Its write-capable publish job targets the caller repository's `npm` environment. Pass `install-playwright: true` for packages whose complete `check` includes browser tests. Version `0.0.0` is treated as an unreleased scaffold and is never published.
+Call the shared publisher from the package repository's `publish.yml` after CI
+has passed for the same commit on `main`. The workflow verifies that CI result,
+runs the package's normal pack lifecycle and packaging checks, then uploads the
+verified archive to npm from the caller's `npm` environment. Package code runs
+during preparation with read permissions. The upload job uses the prepared
+archive and does not run package lifecycle scripts. Rerun CI before dispatching
+publication if the current commit has no successful main CI run.
 
 ### Compute a release tag
 
