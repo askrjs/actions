@@ -1,0 +1,14 @@
+name: Require successful main CI
+description: Verify the latest push-triggered CI run for the exact release commit.
+inputs:
+  token:
+    description: A GitHub token with Actions read permission.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Verify CI for the release commit
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: bash "$GITHUB_ACTION_PATH/require-main-ci.sh"

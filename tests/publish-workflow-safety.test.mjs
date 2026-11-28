@@ -43,3 +43,22 @@ test("should ensure browser release gates install every supported Playwright eng
   assert.match(verifyJob, installCommand);
   assert.match(publishJob, installCommand);
 });
+
+
+const verifiedWorkflowUrl = new URL("../.github/workflows/publish-verified-package.yml", import.meta.url);
+
+test("should gate artifact preparation on completed main CI and isolate npm upload permissions", async () => {
+  const workflow = await readFile(verifiedWorkflowUrl, "utf8");
+  const [, prepare, publish] = workflow.split(/\n  (?:prepare|publish):/);
+  assert.match(prepare, /actions: read/);
+  assert.match(prepare, /actions\/require-main-ci@/);
+  assert.ok(prepare.indexOf("Require green main CI") < prepare.indexOf("Install dependencies"));
+  assert.doesNotMatch(prepare, /contents: write|id-token: write/);
+  assert.doesNotMatch(workflow, /npm test|npm run check\b|playwright install|uses: .\/\.github\/workflows\/ci\.yml/);
+  assert.match(publish, /needs: prepare/);
+  assert.match(publish, /environment: npm/);
+  assert.match(publish, /id-token: write/);
+  assert.ok(publish.indexOf("Verify archive digest") < publish.indexOf("Create release tag"));
+  assert.match(publish, /npm publish \.\/package\.tgz --ignore-scripts --provenance --access public/);
+  assert.doesNotMatch(publish, /npm (?:ci|install|run|pack)\b/);
+});
